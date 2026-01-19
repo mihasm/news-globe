@@ -1,3 +1,5 @@
+![NewsGlobe Screenshot](screenshot.png)
+
 # NewsGlobe
 
 A multi-source live world events aggregation system that collects, processes, and visualizes events from multiple data sources on an interactive map.

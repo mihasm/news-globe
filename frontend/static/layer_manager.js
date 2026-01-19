@@ -5,9 +5,9 @@
 
 class LayerManager {
     constructor() {
-        // Layer configuration state
+        // Layer configuration state (will be updated from NewsGlobeConfig when available)
         this.config = {
-            baseLayer: 'osm',  // Default base layer (OpenStreetMap)
+            baseLayer: window.NewsGlobeConfig?.defaultBaseLayer || 'osm',  // Default base layer
             weatherLayer: 'none'            // Weather overlay
         };
         
@@ -40,6 +40,14 @@ class LayerManager {
         if (mapInterface) {
             this.mapInterface = mapInterface;
         }
+
+        // Update config from NewsGlobeConfig if available
+        if (window.NewsGlobeConfig && window.NewsGlobeConfig.defaultBaseLayer) {
+            this.config.baseLayer = window.NewsGlobeConfig.defaultBaseLayer;
+        }
+
+        // Apply initial layers
+        this._applyToCurrentMap();
     }
     
     /**
@@ -122,7 +130,11 @@ class LayerManager {
      * Apply base layer to Leaflet
      */
     _applyBaseLayerToLeaflet() {
-        if (!this.leafletMap) return;
+        console.log('LayerManager: _applyBaseLayerToLeaflet called with layerId:', this.config.baseLayer);
+        if (!this.leafletMap) {
+            console.log('LayerManager: No leafletMap available');
+            return;
+        }
         
         // Remove existing base layer
         if (this.leafletBaseLayer) {

@@ -16,6 +16,10 @@ Notes:
 
 from __future__ import annotations
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 import asyncio
 import logging
 import os

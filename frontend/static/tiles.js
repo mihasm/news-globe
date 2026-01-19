@@ -13,7 +13,7 @@ function change_tiles() {
         console.warn("LayerManager not initialized");
         return;
     }
-    
+
     // Get values from UI - try unified selector first, fallback to legacy selectors
     const baseLayerSelect = document.getElementById("base_layer_select") || document.getElementById("map_style_select");
     const weatherSelect = document.getElementById("openweather_select");
@@ -22,7 +22,7 @@ function change_tiles() {
         console.warn("Layer selectors not found");
         return;
     }
-    
+
     // Update base layer
     const selectedBaseLayer = baseLayerSelect.value;
     if (window.current_selected_tile !== selectedBaseLayer) {
@@ -30,10 +30,13 @@ function change_tiles() {
         window.current_selected_tile = selectedBaseLayer;
         window.layerManager.setBaseLayer(selectedBaseLayer);
     }
-    
+
     // Update weather layer
     const selectedWeatherLayer = weatherSelect.value;
     window.layerManager.setWeatherLayer(selectedWeatherLayer);
 }
+
+// Make function globally available
+window.change_tiles = change_tiles;
 
 
