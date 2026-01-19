@@ -18,9 +18,9 @@ Before running News Globe, you'll need:
    - **AIS Stream API Key**: Required for vessel tracking. Get from [https://aisstream.io/](https://aisstream.io/)
 
 2. **System Requirements:**
-   - Docker & Docker Compose (recommended)
-   - Python 3.x (for local development)
-   - PostgreSQL with PostGIS extension
+   - **Docker & Docker Compose** (required for full system)
+   - Python 3.x (for local development or debugging)
+   - PostgreSQL with PostGIS (automatically provisioned via Docker)
 
 ## Quick Start
 
@@ -37,16 +37,16 @@ Before running News Globe, you'll need:
    docker-compose up -d
    ```
 
-3. **Or run locally:**
+3. **Or run locally for development:**
    ```bash
    pip install -r requirements.txt
    # Set environment variables or use .env file
-   python main.py
+   python main.py  # Automatically opens browser to http://localhost
    ```
 
 4. **Access the application:**
-   - Frontend: http://localhost
-   - API: http://localhost/api (see [API.md](API.md) for documentation)
+   - Frontend: http://localhost (nginx on port 80)
+   - API: http://localhost:8080/api (see [API.md](API.md) for documentation)
 
 ## Configuration
 
@@ -56,50 +56,56 @@ Copy `env.example` to `.env` and configure the following variables:
 
 - `AISSTREAM_API_KEY`: Your AIS Stream API key from [https://aisstream.io/](https://aisstream.io/)
 - `MAPBOX_TOKEN`: Your Mapbox access token from [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/)
+- `CESIUM_ION_TOKEN`: Your Cesium Ion API token from [https://cesium.com/ion/](https://cesium.com/ion/) (optional)
+- `OPENWEATHERMAP_API_KEY`: Your OpenWeatherMap API key from [https://openweathermap.org/api](https://openweathermap.org/api) (optional)
 
-The frontend will automatically load the Mapbox token from the API at runtime.
+The frontend will automatically load API tokens from the API at runtime.
 
 ## Data Pipeline
 
-1. **Collection**: 
-   - Supervisor runs connectors (GDELT, GDACS, USGS, Telegram, Mastodo, RSS) on schedules, converting data to unified `IngestionRecord` format and sending to Memory Store
+1. **Collection**:
+   - Supervisor service orchestrates data collection from connectors (GDELT, GDACS, USGS, Telegram, Mastodon, RSS)
+   - Raw data is converted to unified `IngestionRecord` format and stored in Memory Store
 
-2. **Ingestion**: 
-   - Ingestion service polls Memory Store for raw items
-   - Validates records, performs NLP geocoding for missing locations
-   - Stores normalized items in PostgreSQL with deduplication
+2. **Ingestion**:
+   - Ingestion service continuously polls Memory Store for new records
+   - Performs NLP-based geocoding for location extraction from unstructured text
+   - Validates and normalizes data, stores in PostgreSQL with deduplication
 
-3. **Clustering**: 
-   - Clustering service processes unassigned normalized items
-   - Groups related events using spaCy vectors and fuzzy matching
-   - Creates/updates clusters in database
+3. **Clustering**:
+   - Clustering service processes normalized events
+   - Groups related events using spaCy sentence vectors and fuzzy string matching
+   - Maintains cluster relationships and metadata in database
 
-4. **Serving**: 
-   - API server provides REST endpoints for clusters/events
-   - Frontend queries API and displays events on interactive map
+4. **Serving**:
+   - API server provides REST endpoints for clusters, events, and real-time data
+   - Frontend queries API via HTTP and displays events on interactive Cesium/Leaflet map
+   - Proxy server handles WebSocket connections for real-time updates
 
 ## Architecture
 
-- **Connectors**: Unified connectors for GDELT, GDACS, USGS, Telegram, Mastodon, RSS. Ran using the supervisor container.
+- **Connectors**: Unified connectors for GDELT, GDACS, USGS, Telegram, Mastodon, RSS. Managed by the supervisor service.
 - **Services**:
-  - API server (REST endpoints)
-  - Ingestion service (NLP/geocoding)
-  - Clustering service (event grouping)
-  - Memory store (in-memory data layer)
-- **Frontend**: Static web app with map visualization
-- **Database**: PostgreSQL
+  - **API Server**: REST endpoints for data access and configuration
+  - **Supervisor**: Orchestrates data collection from all connectors
+  - **Ingestion Service**: Processes raw data with NLP/geocoding and deduplication
+  - **Clustering Service**: Groups related events using spaCy vectors and fuzzy matching
+  - **Memory Store**: In-memory data layer for fast data transfer between services
+  - **Proxy Server**: Handles WebSocket connections and service routing
+- **Frontend**: Static web app with interactive map visualization using Cesium/Leaflet
+- **Database**: PostgreSQL with PostGIS for spatial data
 
 ## Requirements
 
-- Docker & Docker Compose (recommended)
-- Python 3.x
-- PostgreSQL
+- **Docker & Docker Compose** (recommended for production)
+- **Python 3.x** (for local development)
+- **PostgreSQL with PostGIS** (automatically handled by Docker)
 
 ## Development
 
 ### Testing
 
-Run the test suite:
+Run the test suite using Playwright for browser automation:
 ```bash
 python tests/runner.py
 ```
