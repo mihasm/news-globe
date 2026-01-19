@@ -51,10 +51,10 @@ NOTICE: First run can take A WHILE. It is building the location cache database. 
 
 Copy `env.example` to `.env` in root folder (next to docker-compose.yml) and configure the following variables:
 
-- `AISSTREAM_API_KEY`: Your AIS Stream API key from [https://aisstream.io/](https://aisstream.io/)
-- `MAPBOX_TOKEN`: Your Mapbox access token from [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/)
-- `CESIUM_ION_TOKEN`: Your Cesium Ion API token from [https://cesium.com/ion/](https://cesium.com/ion/) (optional)
-- `OPENWEATHERMAP_API_KEY`: Your OpenWeatherMap API key from [https://openweathermap.org/api](https://openweathermap.org/api) (optional)
+- `AISSTREAM_API_KEY`: Your AIS Stream API key
+- `MAPBOX_TOKEN`: Your Mapbox access token
+- `CESIUM_ION_TOKEN`: Your Cesium Ion API token
+- `OPENWEATHERMAP_API_KEY`: Your OpenWeatherMap API key
 
 The frontend will automatically load API tokens from the API at runtime.
 
