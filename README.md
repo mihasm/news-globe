@@ -29,7 +29,7 @@ Before running News Globe, you'll need:
 
 1. **Clone and configure:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/mihasm/news-globe.git
    cd news-globe
    cp env.example .env
    # Edit .env with your API keys
