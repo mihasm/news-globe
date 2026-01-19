@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <title>News Globe</title>
+
+    <!-- JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js" integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30=" crossorigin="anonymous"></script>
+
+    <!-- Font awesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Leaflet default stylesheet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous"/>
+
+    <!-- Marker cluster stylesheets -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+    <!-- JQuery  stylesheet-->
+    <link rel="stylesheet" type="text/css" 
+    href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.1/themes/base/jquery-ui.css"/>
+
+    <!-- CesiumJS -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    
+    <!-- Rainbow color gradient (for 3D visualization) -->
+    <script src="https://cdn.jsdelivr.net/npm/rainbowvis.js@1.0.0/rainbowvis.min.js"></script>
+
+    <!-- Suppress deprecated MouseEvent warnings -->
+    <script>
+        // Suppress Firefox deprecation warnings for mozPressure and mozInputSource
+        if (typeof MouseEvent !== 'undefined') {
+            Object.defineProperty(MouseEvent.prototype, 'mozPressure', {
+                get: function() { return 0; },
+                set: function() {},
+                configurable: true
+            });
+            Object.defineProperty(MouseEvent.prototype, 'mozInputSource', {
+                get: function() { return 0; },
+                set: function() {},
+                configurable: true
+            });
+        }
+    </script>
+
+    <!-- Leaflet base -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+
+    <!-- Markercluster -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <!-- Cache -->
+    <script src="https://unpkg.com/pouchdb@^5.2.0/dist/pouchdb.js"></script>
+    <script src="https://unpkg.com/leaflet.tilelayer.pouchdbcached@latest/L.TileLayer.PouchDBCached.js"></script>
+
+    <!-- Edge Buffer -->
+    <script src="./leaflet.edgebuffer.js"></script>
+
+    <!-- Rainviewer -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mwasil/Leaflet.Rainviewer/leaflet.rainviewer.css"/>
+    <script src="https://cdn.jsdelivr.net/gh/mwasil/Leaflet.Rainviewer/leaflet.rainviewer.js"></script>
+
+    <!-- Luxon for date/time handling -->
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
+    
+    <!-- noUiSlider -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.js"></script>
+
+    <!-- My styles -->
+    <link rel="stylesheet" href="styles.css?v=20260112">
+
+    <!-- Configuration -->
+    <script src="config.js"></script>
+
+</head>
+<body>
+    <div id="map"></div>
+    <div id="cesiumContainer"></div>
+    <div class="loading-overlay">
+        <div class="loader"></div>
+    </div>
+    <iframe id="webpage-iframe"></iframe>
+    <div id="button_container">
+        <label class="switch" title="2D/3D Toggle">
+            <input type="checkbox" id="button_map_mode"/>
+            <i class="fa-solid fa-lg fa-cube"></i>
+        </label>
+
+
+        <label class="switch" title="Layers">
+            <input type="checkbox" id="button_layers_panel"/>
+            <i class="fa-solid fa-lg fa-layer-group"></i>
+        </label>
+
+
+
+        <label class="switch" title="Time Filter">
+            <input type="checkbox" id="button_time_filter"/>
+            <i class="fa-solid fa-lg fa-clock"></i>
+        </label>
+
+        <label class="switch" title="Admin">
+            <input type="checkbox" id="button_admin_panel"/>
+            <i class="fa-solid fa-lg fa-cog"></i>
+        </label>
+
+        <label class="switch" title="AIS Vessels">
+            <input type="checkbox" id="button_ais_vessels"/>
+            <i class="fa-solid fa-lg fa-ship"></i>
+        </label>
+
+        <label class="switch" title="ADSB Aircraft">
+            <input type="checkbox" id="button_adsb_aircraft"/>
+            <i class="fa-solid fa-lg fa-plane"></i>
+        </label>
+
+    </div>
+
+    <!-- Sidebar button positioned on the right side -->
+    <label class="switch sidebar-button-right" title="Sidebar">
+        <input type="checkbox" id="button_sidebar"/>
+        <i class="fa-solid fa-lg fa-bars"></i>
+    </label>
+
+
+<div class="popup" id="layers_panel">
+    <div class="popup-header">
+        <div>Layers</div>
+        <label class="popup-close-button">
+            <input class="hide" type="button" onclick="close_layers()" value="&#10005">
+            <i class="fa-solid fa-xmark"></i>
+        </label>
+    </div>
+
+    <div class="popup-body">
+        <!-- Base Map Section -->
+        <div class="layers-section" id="section_base_map">
+            <div class="layers-section-title">Base Map</div>
+            
+            <div class="layers-row" id="row_base_layer">
+                <span class="layers-label">Base Layer:</span>
+                <select id="base_layer_select" onchange="change_tiles()">
+                    <!-- Mapbox styles (work in both 2D and 3D) -->
+                    <optgroup class="optionGroup" label="Mapbox Styles">
+                        <option value="mapbox/dark-v10">Dark</option>
+                        <option value="mapbox/satellite-v9">Satellite</option>
+                        <option value="mapbox/satellite-streets-v11">Satellite Streets</option>
+                        <option value="mapbox/streets-v11">Streets</option>
+                        <option value="mapbox/outdoors-v11">Outdoors</option>
+                        <option value="mapbox/light-v10">Light</option>
+                        <option value="mapbox/navigation-day-v1">Navigation Day</option>
+                        <option value="mapbox/navigation-night-v1">Navigation Night</option>
+                    </optgroup>
+                    <!-- Cesium providers (work in 3D, fallback in 2D) -->
+                    <optgroup class="optionGroup" label="Cesium Providers">
+                        <option value="ion-world">Bing Aerial (Ion)</option>
+                        <option value="ion-sentinel">Sentinel-2</option>
+                        <option value="osm">OpenStreetMap</option>
+                        <option value="natural-earth">Natural Earth</option>
+                    </optgroup>
+                </select>
+            </div>
+            
+            <!-- Legacy selectors (hidden, kept for backwards compatibility) -->
+            <div class="layers-row" id="row_2d_base" style="display:none;">
+                <span class="layers-label">Style:</span>
+                <select id="map_style_select" onchange="change_tiles()">
+                    <option value="mapbox/dark-v10">Dark</option>
+                    <option value="mapbox/satellite-v9">Satellite</option>
+                    <option value="mapbox/satellite-streets-v11">Satellite Streets</option>
+                    <option value="mapbox/streets-v11">Streets</option>
+                    <option value="mapbox/outdoors-v11">Outdoors</option>
+                    <option value="mapbox/light-v10">Light</option>
+                    <option value="mapbox/navigation-day-v1">Navigation Day</option>
+                    <option value="mapbox/navigation-night-v1">Navigation Night</option>
+                </select>
+            </div>
+            
+            <div class="layers-row" id="row_3d_base" style="display:none;">
+                <span class="layers-label">3D Imagery:</span>
+                <select id="cesium_imagery_select">
+                    <option value="ion-world">Bing Aerial (Ion)</option>
+                    <option value="ion-sentinel">Sentinel-2</option>
+                    <option value="osm">OpenStreetMap</option>
+                    <option value="natural-earth">Natural Earth</option>
+                </select>
+            </div>
+            
+            <div class="layers-row" id="row_weather">
+                <span class="layers-label">Weather:</span>
+                <select id="openweather_select" onchange="change_tiles()">
+                    <option value="none">None</option>
+                    <option value="clouds_new">Clouds</option>
+                    <option value="precipitation_new">Precipitation</option>
+                    <option value="pressure_new">Sea level pressure</option>
+                    <option value="wind_new">Wind speed</option>
+                    <option value="temp_new">Temperature</option>
+                </select>
+            </div>
+            
+        </div>
+
+        <!-- Overlays Section (2D only) -->
+        <div class="layers-section" id="section_overlays">
+            <div class="layers-section-title">Overlays</div>
+            <label class="layers-checkbox"><input type="checkbox" id="layer_weather_radar"/> Weather Radar</label>
+        </div>
+
+        <!-- 2D Visualization Section (2D only) -->
+        <div class="layers-section" id="section_2d_viz">
+            <div class="layers-section-title">2D Visualization</div>
+            <div class="layers-radio-group">
+                <label class="layers-radio"><input type="radio" name="marker_mode" id="marker_mode_cluster" checked/> Clusters</label>
+                <label class="layers-radio"><input type="radio" name="marker_mode" id="marker_mode_circles"/> Circles</label>
+            </div>
+        </div>
+
+        <!-- 3D Visualization Section (hidden in 2D mode) -->
+        <div class="layers-section" id="section_3d_viz" style="display:none;">
+            <div class="layers-section-title">3D Visualization</div>
+            <label class="layers-checkbox"><input type="checkbox" id="viz_circles"/> Circles</label>
+            <label class="layers-checkbox"><input type="checkbox" id="viz_cylinders" checked/> Cylinders</label>
+            <label class="layers-checkbox"><input type="checkbox" id="viz_polylines"/> Bars/Lines</label>
+        </div>
+    </div>
+</div>
+
+<div class="popup" id="time_filter_panel">
+    <div class="popup-header">
+        <div>Time Filter</div>
+        <label class="popup-close-button">
+            <input class="hide" type="button" onclick="close_time_filter_panel()" value="&#10005">
+            <i class="fa-solid fa-xmark"></i>
+        </label>
+    </div>
+    <div class="popup-body">
+        <!-- Time Range Section -->
+        <div class="layers-section">
+            <div class="layers-section-title">Time Range</div>
+            <div class="layers-row">
+                <span class="layers-label">From:</span>
+                <input type="datetime-local" id="time_filter_from" class="time-filter-datetime">
+            </div>
+            <div class="layers-row">
+                <span class="layers-label">To:</span>
+                <input type="datetime-local" id="time_filter_to" class="time-filter-datetime">
+            </div>
+        </div>
+
+        <!-- Color Settings Section -->
+        <div class="layers-section">
+            <div class="layers-section-title">Color Settings</div>
+            <div class="layers-row">
+                <span class="layers-label">Old Color:</span>
+                <input type="color" id="time_filter_color_from" value="#FFC0CB" class="time-filter-color">
+            </div>
+            <div class="layers-row">
+                <span class="layers-label">New Color:</span>
+                <input type="color" id="time_filter_color_to" value="#990000" class="time-filter-color">
+            </div>
+        </div>
+
+        <!-- Options Section -->
+        <div class="layers-section">
+            <div class="layers-section-title">Options</div>
+            <label class="layers-checkbox">
+                <input type="checkbox" id="time_filter_enabled"/> Enable Time Filter
+            </label>
+            <label class="layers-checkbox">
+                <input type="checkbox" id="time_filter_color_coding"/> Enable Color Coding
+            </label>
+        </div>
+    </div>
+</div>
+
+<div id="status_container">
+    <i class="fa-solid fa-signal"></i>
+</div>
+
+
+<div class="popup" id="admin_panel">
+    <div class="popup-header">
+        <div>Admin Panel</div>
+        <label class="popup-close-button">
+            <input class="hide" type="button" onclick="close_admin_panel()" value="&#10005">
+            <i class="fa-solid fa-xmark"></i>
+        </label>
+    </div>
+    <div class="popup-body">
+        <div class="layers-section">
+            <div class="layers-section-title">Database Management</div>
+
+            <!-- Database Stats -->
+            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #444;">
+                <div class="layers-row" style="margin-bottom: 10px;">
+                    <span class="layers-label">Normalized items:</span>
+                    <span id="admin_normalized_items_count">-</span>
+                </div>
+                <div class="layers-row" style="margin-bottom: 10px;">
+                    <span class="layers-label">Normalized items with cluster IDs:</span>
+                    <span id="admin_clustered_items_count">-</span>
+                </div>
+                <div class="layers-row" style="margin-bottom: 15px;">
+                    <span class="layers-label">Clusters:</span>
+                    <span id="admin_clusters_count">-</span>
+                </div>
+            </div>
+
+            <!-- Delete All Section -->
+            <div style="margin-bottom: 20px;">
+                <div class="layers-row" style="margin-bottom: 15px;">
+                    <button id="admin_delete_all_btn" onclick="deleteAllData()"
+                            style="background-color: #d32f2f; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                        Delete All Data
+                    </button>
+                </div>
+                <p style="margin-top: 8px; font-size: 12px; color: #ff9999; line-height: 1.4;">
+                    This will permanently delete ALL normalized items and clusters from the database. This action cannot be undone.
+                </p>
+            </div>
+            
+            <div id="admin_status_message" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Confirmation Popup -->
+<div id="confirmation_popup" class="confirmation-popup" style="display: none;">
+    <div class="confirmation-popup-overlay"></div>
+    <div class="confirmation-popup-content">
+        <div class="confirmation-popup-header">
+            <h3>Confirm Action</h3>
+        </div>
+        <div class="confirmation-popup-body">
+            <p id="confirmation_message">Are you sure you want to proceed?</p>
+        </div>
+        <div class="confirmation-popup-footer">
+            <button id="confirmation_cancel" class="confirmation-btn confirmation-btn-cancel">Cancel</button>
+            <button id="confirmation_confirm" class="confirmation-btn confirmation-btn-confirm">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script src="helper_functions.js"></script>
+<script src="ui.js"></script>
+<script src="mouse_position.js"></script>
+<script src="layer_manager.js"></script>
+<script src="tiles.js"></script>
+<script src="data_manager.js"></script>
+<script src="location_store.js"></script>
+<script src="time_filter_panel.js"></script>
+<script src="time_filter_manager.js"></script>
+<script src="ais_adsb_manager.js"></script>
+<script src="map.js"></script>
+<script src="cesium_map.js"></script>
+<script src="map_interface.js"></script>
+<script src="sidebar.js"></script>
+<script>
+// Global Luxon date formatting utilities
+// Initialize after DOM and Luxon are loaded
+(function() {
+    // Wait for Luxon to load (it might not be ready immediately)
+    function initLuxonUtils() {
+        // Check for Luxon - it can be exposed as 'luxon' or via window
+        let DateTime;
+        if (typeof luxon !== 'undefined' && luxon.DateTime) {
+            DateTime = luxon.DateTime;
+        } else if (typeof window.luxon !== 'undefined' && window.luxon.DateTime) {
+            DateTime = window.luxon.DateTime;
+        } else {
+            // Retry after a short delay if Luxon isn't loaded yet
+            setTimeout(initLuxonUtils, 100);
+            return;
+        }
+    
+    /**
+     * Global function to format a timestamp for datetime-local input
+     *
+     * @param {number} timestamp - Timestamp in milliseconds
+     * @returns {string} Formatted datetime-local string
+     */
+    window.formatDateTimeLocal = function(timestamp) {
+        const date = new Date(timestamp);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    /**
+     * Global function to format a timestamp as relative time (e.g., "2 hours ago")
+     * Auto-detects user's timezone
+     *
+     * @param {string|Date} timestamp - ISO timestamp string or Date object
+     * @returns {string} Formatted relative time string
+     */
+    window.formatRelativeTime = function(timestamp) {
+        if (!timestamp) return '';
+        
+        try {
+            // Parse the timestamp - Luxon auto-detects timezone
+            // If timestamp has 'Z' or timezone info, it's UTC; otherwise assume UTC
+            let dt;
+            if (typeof timestamp === 'string') {
+                // Ensure UTC if no timezone is specified (assume ISO strings from API are UTC)
+                if (timestamp.endsWith('Z')) {
+                    dt = DateTime.fromISO(timestamp, { zone: 'utc' });
+                } else if (timestamp.includes('+') || timestamp.includes('-', timestamp.indexOf('T') + 1)) {
+                    // Has timezone offset
+                    dt = DateTime.fromISO(timestamp);
+                } else {
+                    // No timezone - assume UTC
+                    dt = DateTime.fromISO(timestamp, { zone: 'utc' });
+                }
+            } else if (timestamp instanceof Date) {
+                dt = DateTime.fromJSDate(timestamp);
+            } else {
+                return '';
+            }
+            
+            // Convert to user's local timezone and format as relative time
+            // Luxon automatically uses the browser's timezone
+            return dt.toRelative();
+        } catch (e) {
+            console.warn('Error formatting time with Luxon:', e);
+            return '';
+        }
+    };
+    
+
+    }
+    
+    // Start initialization - try immediately and retry if needed
+    initLuxonUtils();
+})();
+</script>
+<script>
+// Initialize map interface after all scripts are loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map interface with the Leaflet map
+    if (window.map && window.mapInterface) {
+        window.mapInterface.init(window.map, 'cesiumContainer');
+
+        // Update LayerManager with mapInterface reference if not set
+        if (window.layerManager) {
+            window.layerManager.init(null, null, window.mapInterface);
+        }
+    }
+    
+    // Start periodic time updates for balloons and sidebar (every 30 seconds)
+    setInterval(function() {
+        // Update balloon times (popups on map)
+        if (typeof window.formatBalloonTimes === 'function') {
+            window.formatBalloonTimes();
+        }
+        
+        // Update sidebar times
+        if (window.newsSidebar && typeof window.newsSidebar.updateSidebarTimes === 'function') {
+            window.newsSidebar.updateSidebarTimes();
+        }
+    }, 30000); // 30 seconds = 30000 milliseconds
+
+});
+
+// 2D/3D Toggle button handler
+var button_map_mode = document.getElementById('button_map_mode');
+if (button_map_mode) {
+    button_map_mode.addEventListener('change', function(event) {
+        if (window.mapInterface) {
+            var newMode = window.mapInterface.toggle();
+        }
+    });
+}
+
+// 3D Visualization options handlers
+function updateVisualizationOptions() {
+    if (window.mapInterface && window.mapInterface.cesiumMap) {
+        var options = {
+            circles: document.getElementById('viz_circles').checked,
+            cylinders: document.getElementById('viz_cylinders').checked,
+            polylines: document.getElementById('viz_polylines').checked
+        };
+        window.mapInterface.setVisualization(options);
+    }
+}
+
+// Initialize checkboxes to match CesiumMap defaults (cylinders enabled, others disabled)
+function initializeVizCheckboxes() {
+    const vizCircles = document.getElementById('viz_circles');
+    const vizCylinders = document.getElementById('viz_cylinders');
+    const vizPolylines = document.getElementById('viz_polylines');
+    
+    if (vizCircles && vizCylinders && vizPolylines) {
+        // Set initial state to match CesiumMap defaults
+        vizCircles.checked = false;  // showCircles = false
+        vizCylinders.checked = true;  // showCylinders = true
+        vizPolylines.checked = false;  // showPolylines = false
+        
+        // Add event listeners
+        vizCircles.addEventListener('change', updateVisualizationOptions);
+        vizCylinders.addEventListener('change', updateVisualizationOptions);
+        vizPolylines.addEventListener('change', updateVisualizationOptions);
+        
+        // Initialize CesiumMap with correct options if it exists
+        if (window.mapInterface && window.mapInterface.cesiumMap) {
+            updateVisualizationOptions();
+        }
+    }
+}
+
+// Initialize immediately if DOM is ready, otherwise wait
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeVizCheckboxes);
+} else {
+    initializeVizCheckboxes();
+}
+
+// AIS and ADSB button handlers - start/stop periodic updates
+var button_ais_vessels = document.getElementById('button_ais_vessels');
+if (button_ais_vessels) {
+    button_ais_vessels.addEventListener('change', function(event) {
+        if (button_ais_vessels.checked) {
+            aisAdsbManager.startAISUpdates();
+        } else {
+            aisAdsbManager.stopAISUpdates();
+        }
+    });
+}
+
+var button_adsb_aircraft = document.getElementById('button_adsb_aircraft');
+if (button_adsb_aircraft) {
+    button_adsb_aircraft.addEventListener('change', function(event) {
+        if (button_adsb_aircraft.checked) {
+            aisAdsbManager.startADSBUpdates();
+        } else {
+            aisAdsbManager.stopADSBUpdates();
+        }
+    });
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: newsglobe_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/static:/usr/share/nginx/html/static:ro
+      - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    networks:
+      - newsglobe_network
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    container_name: newsglobe_api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-newsglobe}
+      API_ADDRESS: 0.0.0.0
+      API_PORT: 8080
+      AISSTREAM_API_KEY: ${AISSTREAM_API_KEY}
+      MAPBOX_TOKEN: ${MAPBOX_TOKEN}
+    volumes:
+      - ./shared:/app/shared:ro
+      - ./services/api:/app:rw
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - newsglobe_network
+
+  supervisor:
+    build:
+      context: .
+      dockerfile: services/supervisor/Dockerfile
+    container_name: newsglobe_supervisor
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-newsglobe}
+      MEMORY_STORE_URL: http://memory-store:6379
+    volumes:
+      - ./shared:/app/shared:ro
+      - ./services/supervisor:/app:rw
+      - ./connectors:/app/connectors:ro
+    depends_on:
+      memory-store:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks:
+      - newsglobe_network
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: newsglobe_events_ingestion
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-newsglobe}
+      MEMORY_STORE_URL: http://memory-store:6379
+    volumes:
+      - ./shared:/app/shared:ro
+      - ./services/ingestion:/app:rw
+    depends_on:
+      memory-store:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks:
+      - newsglobe_network
+
+  clustering:
+    build:
+      context: .
+      dockerfile: services/clustering/Dockerfile
+    container_name: newsglobe_events_clustering
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-newsglobe}
+    volumes:
+      - ./shared:/app/shared:ro
+      - ./services/clustering:/app:rw
+    depends_on:
+      ingestion:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks:
+      - newsglobe_network
+
+  memory-store:
+    build:
+      context: .
+      dockerfile: services/memory-store/Dockerfile
+    container_name: newsglobe_memory_store
+    environment:
+      MEMORY_STORE_ADDRESS: 0.0.0.0
+      MEMORY_STORE_PORT: 6379
+    volumes:
+      - ./services/memory-store:/app:rw
+    ports:
+      - "6379:6379"
+    networks:
+      - newsglobe_network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-newsglobe}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./shared/models/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - newsglobe_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d newsglobe"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  newsglobe_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

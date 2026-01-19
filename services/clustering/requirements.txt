@@ -1,0 +1,6 @@
+spacy>=3.7.0
+spacy-langdetect>=0.1.2
+numpy>=1.24.0
+rapidfuzz>=3.0.0
+peewee>=3.16.0
+psycopg2-binary>=2.9.0

@@ -1,0 +1,1193 @@
+body {
+    padding: 0;
+    margin: 0;
+    position: relative;
+    display: flex;
+    font-family: Verdana, Geneva, sans-serif;
+    overflow: hidden;
+}
+
+/* Font Awesome font-display fix to prevent glyph bbox warnings */
+.fab, .far, .fas, .fa-solid, .fa-regular, .fa-brands {
+    font-display: swap;
+}
+
+html, body, #map {
+    height: 100%;
+}
+
+#webpage-iframe {
+    display: none;
+}
+
+
+
+#map {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    -webkit-user-select: text;
+    user-select: text;
+    z-index: 0;
+    background: #191a1a;
+    transition: width 0.3s ease, right 0.3s ease;
+    box-sizing: border-box;
+}
+
+/* Adjust map when sidebar is visible */
+body.sidebar-visible #map {
+    width: calc(100% - 350px);
+    right: 350px;
+}
+
+/* Adjust map when sidebar is visible in portrait mode - shrink vertically from bottom */
+@media (max-width: 768px) {
+    body.sidebar-visible #map {
+        width: 100%;
+        height: 60%;
+        right: 0;
+    }
+}
+
+/* Sidebar button positioned on the right side */
+.sidebar-button-right {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 1000;
+    margin: 0;
+}
+
+.leaflet-control-attribution {
+    display: none;
+}
+
+.leaflet-popup {
+    /*bottom: -20px !important;*/
+}
+
+.leaflet-popup-content-wrapper {
+    -webkit-user-select: text;
+    user-select: text;
+    color: white !important;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
+    border: none !important;
+    /*padding: 0 !important;*/
+}
+
+.leaflet-popup-tip {
+    background: rgba(0, 0, 0, 0) !important;
+    box-shadow: none !important;
+}
+
+.marker_tooltip {
+    color: white !important;
+    background-color: rgba(0,0,0,0.8) !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.leaflet-tooltip-top:before, 
+.leaflet-tooltip-bottom:before, 
+.leaflet-tooltip-left:before, 
+.leaflet-tooltip-right:before {
+    border: none !important;
+}
+
+.leaflet-tooltip{
+    width: 200px;
+    white-space: normal;
+}
+
+.custom_cluster_icon {
+    margin-left:-14px;
+    margin-top:-14px;
+    height:40px;
+    width:40px;
+    position:absolute;
+}
+
+
+#map-container {
+    background-color: black !important;
+}
+
+
+#button_container {
+  z-index: 9;
+  margin: 12px;
+  top: 0px;
+  position: absolute;
+  width: 60px;
+  display: grid;
+}
+
+#search_panel,#layers_panel,#time_filter_panel,#admin_panel {
+    z-index: 15;
+    margin: 12px;
+    top: 15px;
+    left: 50px;
+    position: absolute;
+    color: white;
+    background-color: rgba(0,0,0,0.85);
+    width: 350px;
+}
+
+
+
+#status_container {
+    z-index: 15;
+    margin: 12px;
+    bottom: 0px;
+    left: 0px;
+    position: absolute;
+    background-color: none;
+    color: red;
+    font-family: Arial;
+}
+
+#search_terms {
+    color: white;
+    list-style-type: none;
+}
+
+.date_picker {
+    width: 80px;
+}
+
+#ui-datepicker-div {
+    display: none;
+}
+
+
+td {
+    margin: 2px;
+}
+
+/****** SWITCH  *******/
+
+.switch input[type=checkbox] {
+    display: none;
+}
+
+label {
+    margin-top: 5px;
+    cursor: pointer;
+}
+
+label.switch i {
+    display: inline-block;
+    padding: 3px;
+    color: white;
+    resize: horizontal;
+}
+
+input[type=checkbox]:checked + i {
+  color: #00ffbd;
+}
+
+/**********************/
+
+.popup {
+  position: absolute;
+  z-index: 20;
+  background-color: rgba(0,0,0,0.5);
+  border: 0;
+  border-color: black;
+  text-align: left;
+  display: block;
+  color: white;
+  border-radius: 10px;
+  box-shadow: black 1px 1px 3px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+#planeInfo {
+    width: 334px;
+    height: 620px;
+}
+
+
+.popup-header {
+    cursor: move;
+    z-index: 21;
+    background-color: rgba(0,200,255);
+    color: #fff;
+    padding: 4px;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
+}
+
+.hide {
+    display: none;
+    position: absolute;
+}
+
+.popup-close-button {
+    position: absolute;
+    top: 0px;
+    right: 8px;
+    color: white;
+}
+
+.popup-close-button:hover {
+    color: rgba(255,15,15,1);
+    cursor: pointer;
+}
+
+.popup-body {
+    padding: 4px;
+    overflow: auto;
+    width: 100%;
+    height: calc(100% - 27px);
+    box-sizing: border-box;
+}
+
+#iframe_container_plane_info {
+    height: calc(100% - 1.5em);
+}
+
+#iframe_plane_info {
+    height: 100%;
+    width: 100%;
+}
+
+.ui-resizable-resizing iframe {
+    pointer-events: none;
+}
+
+/* Custom scrollbar */
+
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: lightgray;
+  border-radius: 2px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: rgba(0,200,255);
+  border-radius: 5px;
+}
+
+ul {
+    padding-left: 1em;
+}
+
+li:before {
+  content: "\f00c"; /* FontAwesome Unicode */
+  font-family: FontAwesome;
+  display: inline-block;
+  margin-left: -1.3em; /* same as padding-left set on li */
+  width: 1.3em; /* same as padding-left set on li */
+}
+
+/* Loader */
+
+.loader {
+  border: 5px solid grey; /* Light grey */
+  border-top: 5px solid rgba(0,200,255); /* Blue */
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: spin 0.5s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-overlay {
+    z-index: 100;
+    background-color: black;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ZOOM BUTTONS */
+.leaflet-touch .leaflet-bar a {
+    height: 20px;
+    width: 20px;
+    font-size: 20px;
+}
+
+.leaflet-control-zoom > a > span {
+    position: relative;
+    left: 0;
+    top: -4px;
+}
+
+/* Rainviewer plugin */
+.leaflet-control-rainviewer {
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: none;
+}
+
+.leaflet-control-rainviewer-close {
+    background-color: white;
+    width: 18px;
+}
+
+.balloon-media-holder {
+    display: grid;
+    width: 300px !important;
+    max-width: 300px !important;
+    min-width: 300px;
+    height: 200px !important;
+    max-height: 200px !important;
+    min-height: 200px;
+    overflow: hidden;
+    margin-top: 5px;
+    box-sizing: border-box;
+    padding: 0;
+    border: none;
+}
+
+/* Pure CSS grid templates - no JavaScript manipulation */
+/* 1 item: full 300px × 200px */
+.balloon-media-holder.grid-1 {
+    grid-template-columns: 300px;
+    grid-template-rows: 200px;
+    gap: 0;
+}
+
+/* 2 items: each 150px wide (half) × 200px tall */
+.balloon-media-holder.grid-2 {
+    grid-template-columns: 150px 150px;
+    grid-template-rows: 200px;
+    gap: 0;
+}
+
+/* 3+ items: 3 columns × 2 rows, each 100px wide (1/3) × 100px tall (half) */
+.balloon-media-holder.grid-3 {
+    grid-template-columns: 100px 100px 100px;
+    grid-template-rows: 100px 100px;
+    gap: 0;
+}
+
+/* Direct sizing on media elements based on grid class */
+/* Grid cells are already sized by grid-template-columns/rows */
+/* We just need to constrain the media elements themselves */
+
+/* 1 item: full 300px × 200px - sizes set directly on elements */
+.balloon-media-holder.grid-1 > img {
+    width: 300px;
+    height: 200px;
+    max-width: 300px;
+    max-height: 200px;
+    display: block;
+    box-sizing: border-box;
+    object-fit: cover;
+}
+
+.balloon-media-holder.grid-1 > video {
+    width: 300px;
+    height: 200px;
+    max-width: 300px;
+    max-height: 200px;
+    display: block;
+    box-sizing: border-box;
+    object-fit: contain;
+}
+
+.balloon-media-holder.grid-1 > a {
+    display: block;
+    width: 300px;
+    height: 200px;
+    max-width: 300px;
+    max-height: 200px;
+}
+
+.balloon-media-holder.grid-1 > a > img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    box-sizing: border-box;
+    object-fit: cover;
+}
+
+/* 2 items: each 150px wide × 200px tall */
+.balloon-media-holder.grid-2 > img {
+    width: 150px;
+    height: 200px;
+    max-width: 150px;
+    max-height: 200px;
+    display: block;
+    box-sizing: border-box;
+    object-fit: cover;
+}
+
+.balloon-media-holder.grid-2 > video {
+    width: 150px;
+    height: 200px;
+    max-width: 150px;
+    max-height: 200px;
+    display: block;
+    box-sizing: border-box;
+    object-fit: contain;
+}
+
+.balloon-media-holder.grid-2 > a {
+    display: block;
+    width: 150px;
+    height: 200px;
+    max-width: 150px;
+    max-height: 200px;
+}
+
+.balloon-media-holder.grid-2 > a > img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    box-sizing: border-box;
+    object-fit: cover;
+}
+
+/* 3+ items: each 100px wide × 100px tall */
+.balloon-media-holder.grid-3 > img {
+    width: 100px;
+    height: 100px;
+    max-width: 100px;
+    max-height: 100px;
+    display: block;
+    box-sizing: border-box;
+    object-fit: cover;
+}
+
+.balloon-media-holder.grid-3 > video {
+    width: 100px;
+    height: 100px;
+    max-width: 100px;
+    max-height: 100px;
+    display: block;
+    box-sizing: border-box;
+    object-fit: contain;
+}
+
+.balloon-media-holder.grid-3 > a {
+    display: block;
+    width: 100px;
+    height: 100px;
+    max-width: 100px;
+    max-height: 100px;
+}
+
+.balloon-media-holder.grid-3 > a > img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    box-sizing: border-box;
+    object-fit: cover;
+}
+
+.leaflet-marker-icon {
+    background: transparent !important;
+    border: none;
+}
+
+.leaflet-container .leaflet-control-mouseposition {
+  background-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 5px #bbb;
+  padding: 0 5px;
+  margin:0;
+  color: #333;
+  font: 11px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+/* ============================================
+   CesiumJS 3D Globe Styles
+   ============================================ */
+
+#cesiumContainer {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 0;
+    display: none;  /* Hidden by default, shown when 3D mode active */
+    background: #000;
+    transition: width 0.3s ease, right 0.3s ease;
+    box-sizing: border-box;
+}
+
+/* Adjust Cesium container when sidebar is visible */
+body.sidebar-visible #cesiumContainer {
+    width: calc(100% - 350px);
+    right: 350px;
+}
+
+/* Adjust Cesium container when sidebar is visible in portrait mode - shrink vertically from bottom */
+@media (max-width: 768px) {
+    body.sidebar-visible #cesiumContainer {
+        width: 100%;
+        height: 60%;
+        right: 0;
+    }
+}
+
+/* Hide Cesium credits */
+.cesium-credit-logoContainer,
+.cesium-credit-textContainer {
+    display: none !important;
+}
+
+.cesium-viewer-bottom {
+    opacity: 0;
+}
+
+/* Cesium toolbar positioning */
+.cesium-viewer-toolbar {
+    right: 50px;
+}
+
+/* Cesium navigation help */
+.cesium-navigation-help {
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+}
+
+/* ============================================
+   News Popup Styles (for RSS articles)
+   ============================================ */
+
+.news-popup {
+    max-width: 300px;
+    font-family: Arial, sans-serif;
+}
+
+.news-source {
+    color: #00c8ff;
+    font-size: 11px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.news-title {
+    display: block;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+.news-title:hover {
+    color: #00c8ff;
+    text-decoration: underline;
+}
+
+.news-description {
+    color: #ccc;
+    font-size: 12px;
+    line-height: 1.4;
+    margin-bottom: 6px;
+}
+
+.news-time {
+    color: #888;
+    font-size: 10px;
+}
+
+/* ============================================
+   Layers Panel - Minimalistic Design
+   ============================================ */
+
+#layers_panel {
+    width: 320px;
+    max-height: 80vh;
+}
+
+#layers_panel .popup-body {
+    padding: 0;
+}
+
+/* Section styling */
+.layers-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.layers-section:last-child {
+    border-bottom: none;
+}
+
+.layers-section-title {
+    color: #00c8ff;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+/* Checkbox styling */
+.layers-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    cursor: pointer;
+    font-size: 13px;
+    color: #ddd;
+}
+
+.layers-checkbox:hover {
+    color: #fff;
+}
+
+.layers-checkbox input[type="checkbox"] {
+    margin-right: 10px;
+    accent-color: #00c8ff;
+}
+
+/* Radio button styling */
+.layers-radio-group {
+    display: flex;
+    gap: 20px;
+}
+
+.layers-radio {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+    color: #ddd;
+}
+
+.layers-radio:hover {
+    color: #fff;
+}
+
+.layers-radio input[type="radio"] {
+    margin-right: 6px;
+    accent-color: #00c8ff;
+}
+
+/* Row styling for dropdowns */
+.layers-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.layers-label {
+    color: #999;
+    font-size: 12px;
+    min-width: 70px;
+}
+
+.layers-row select {
+    flex: 1;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    color: #fff;
+    padding: 6px 8px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.layers-row select:hover {
+    border-color: rgba(255,255,255,0.3);
+}
+
+.layers-row select:focus {
+    outline: none;
+    border-color: #00c8ff;
+}
+
+.layers-row select option {
+    background: #222;
+    color: #fff;
+}
+
+.optionGroup {
+    background: darkgray;
+    color:white;
+}
+
+/* Button styling */
+.layers-btn {
+    background: #00c8ff;
+    border: none;
+    border-radius: 4px;
+    color: #000;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.layers-btn:hover {
+    background: #00a8d6;
+}
+
+/* Subsection styling */
+.layers-subsection {
+    margin-top: 12px;
+    padding: 10px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+}
+
+.layers-subsection-title {
+    color: #888;
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* Satellite list styling */
+.layers-satellite-list {
+    max-height: 80px;
+    overflow-y: auto;
+    font-size: 11px;
+    color: #666;
+    padding: 4px 0;
+}
+
+.layers-loaded-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0 0;
+    max-height: 60px;
+    overflow-y: auto;
+}
+
+.layers-loaded-list li {
+    font-size: 11px;
+    padding: 3px 0;
+    color: #aaa;
+}
+
+.layers-loaded-list li:before {
+    content: none;
+}
+
+/* ============================================
+   Tweet Balloon Styling
+   ============================================ */
+
+.tweet-author {
+    color: #888 !important;
+    text-decoration: none;
+}
+
+.tweet-author:hover {
+    color: #aaa !important;
+    text-decoration: underline;
+}
+
+.tweet-time {
+    color: #888 !important;
+    text-decoration: none;
+    font-weight: normal;
+}
+
+.tweet-time:hover {
+    color: #aaa !important;
+    text-decoration: underline;
+}
+
+/* ============================================
+   Time Filter Panel Styles
+   ============================================ */
+
+#time_filter_panel {
+    width: 320px;
+    max-height: 80vh;
+}
+
+.time-filter-datetime {
+    flex: 1;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    color: #fff;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+}
+
+.time-filter-datetime:hover {
+    border-color: rgba(255,255,255,0.3);
+}
+
+.time-filter-datetime:focus {
+    outline: none;
+    border-color: #00c8ff;
+}
+
+.time-filter-color {
+    flex: 1;
+    height: 32px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+}
+
+.time-filter-color:hover {
+    border-color: rgba(255,255,255,0.3);
+}
+
+
+.noUi-horizontal .noUi-handle {
+    height: 15px;
+}
+
+.noUi-target {
+    height: 5px;
+}
+
+.noUi-handle:before, .noUi-handle:after {
+    display: none;
+}
+    
+#status-text {
+    color: white;
+}
+
+/* Cluster Popup Styling */
+.cluster-popup {
+    background-color: #1a1a1a;
+    color: white;
+    padding: 12px;
+    max-width: 400px;
+    font-family: Verdana, Geneva, sans-serif;
+}
+
+.cluster-popup-header {
+    border-bottom: 1px solid #444;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.cluster-popup-title {
+    font-size: 13px;
+    font-weight: normal;
+    margin: 0 0 6px 0;
+    color: white;
+    line-height: 1.3;
+}
+
+.cluster-popup-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: #aaa;
+    align-items: center;
+}
+
+.cluster-item-count {
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.cluster-location {
+    color: #888;
+}
+
+.cluster-popup-items {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.cluster-item-preview {
+    padding: 8px;
+    margin-bottom: 6px;
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    border-left: 3px solid #4CAF50;
+}
+
+.cluster-item-author {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.cluster-item-text {
+    font-size: 13px;
+    color: #ddd;
+    line-height: 1.4;
+}
+
+.cluster-item-title {
+    font-size: 13px;
+    color: #ddd;
+    font-weight: bold;
+    line-height: 1.4;
+}
+
+.cluster-more-items {
+    text-align: center;
+    padding: 6px;
+    font-size: 12px;
+    color: #888;
+    font-style: italic;
+}
+
+.cluster-popup-footer {
+    border-top: 1px solid #444;
+    padding-top: 8px;
+    margin-top: 10px;
+}
+
+.cluster-view-all {
+    width: 100%;
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.cluster-expand-toggle {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 2px 4px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.cluster-expand-toggle:hover {
+    color: #00c8ff;
+}
+
+.cluster-expand-toggle i {
+    font-size: 10px;
+}
+
+.cluster-sidebar-button {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 2px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.cluster-sidebar-button:hover {
+    color: #00c8ff;
+}
+
+.cluster-sidebar-button i {
+    font-size: 12px;
+}
+
+.cluster-item-link {
+    margin-bottom: 4px;
+}
+
+.cluster-source-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 12px;
+    transition: background-color 0.2s ease;
+}
+
+.cluster-source-link:hover {
+    background-color: #3a3a3a;
+}
+
+.cluster-source-link.tweet {
+    border-left: 3px solid #1da1f2;
+    color: #1da1f2;
+}
+
+.cluster-source-link.news {
+    border-left: 3px solid #ff6b35;
+    color: #ff6b35;
+}
+
+.cluster-source-link i {
+    font-size: 11px;
+}
+
+/* Confirmation Popup Styles */
+.confirmation-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+}
+
+.confirmation-popup-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(2px);
+}
+
+.confirmation-popup-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid #444;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    min-width: 350px;
+    max-width: 500px;
+}
+
+.confirmation-popup-header {
+    padding: 20px 20px 15px;
+    border-bottom: 1px solid #444;
+}
+
+.confirmation-popup-header h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.confirmation-popup-body {
+    padding: 20px;
+}
+
+.confirmation-popup-body p {
+    margin: 0;
+    color: #cccccc;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.confirmation-popup-footer {
+    padding: 15px 20px 20px;
+    border-top: 1px solid #444;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.confirmation-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.confirmation-btn-cancel {
+    background-color: #666;
+    color: #ffffff;
+}
+
+.confirmation-btn-cancel:hover {
+    background-color: #777;
+}
+
+.confirmation-btn-confirm {
+    background-color: #d32f2f;
+    color: #ffffff;
+}
+
+.confirmation-btn-confirm:hover {
+    background-color: #e53935;
+}
+
+/* AIS and ADSB marker styles */
+.ais-vessel-marker {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.ais-vessel-marker i {
+    color: #0066cc;
+    font-size: 12px;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.7);
+}
+
+.adsb-aircraft-marker {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.adsb-aircraft-marker i {
+    color: #ff6600;
+    font-size: 12px;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.7);
+}
+
+/* Vessel and aircraft popup styles */
+.vessel-popup h4,
+.aircraft-popup h4 {
+    margin: 0 0 10px 0;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.vessel-popup .popup-content,
+.aircraft-popup .popup-content {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #cccccc;
+}
+
+.vessel-popup .popup-content strong,
+.aircraft-popup .popup-content strong {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.vessel-popup .popup-content small,
+.aircraft-popup .popup-content small {
+    display: block;
+    margin-top: 8px;
+    color: #999999;
+    font-style: italic;
+}
