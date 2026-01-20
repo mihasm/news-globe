@@ -15,20 +15,21 @@ A multi-source live world events aggregation system that collects, processes, an
 
 Before running News Globe, you'll need:
 
-1. **API Keys:**
-   - **Mapbox Access Token**: Required for map tiles. Get from [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/)
-   - **AIS Stream API Key**: Required for vessel tracking. Get from [https://aisstream.io/](https://aisstream.io/)
+1. **API Keys:** (optional, but recommended)
+   - Mapbox Access Token: Required for nicer map tiles. Get from [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/)
+   - AIS Stream API Key: Required for vessel tracking. Get from [https://aisstream.io/](https://aisstream.io/)
+   - Cesium Ion API Token: Required for nice Cesium 3D tiles. Get from [https://cesium.com/ion/](https://cesium.com/ion/)
+   - OpenWeatherMap API key: Required for drawing weather on map. Get from [https://openweathermap.org/api](https://openweathermap.org/api)
 
 2. **System Requirements:**
    - **Docker & Docker Compose** (required for full system)
    - Python 3.x (for local development or debugging)
-   - PostgreSQL with PostGIS (automatically provisioned via Docker)
 
 ## Quick Start
 
 1. **Clone and configure:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/mihasm/news-globe.git
    cd news-globe
    cp env.example .env
    # Edit .env with your API keys
@@ -39,28 +40,21 @@ Before running News Globe, you'll need:
    docker-compose up -d
    ```
 
-3. **Or run locally for development:**
-   ```bash
-   pip install -r requirements.txt
-   # Set environment variables or use .env file
-   python main.py  # Automatically opens browser to http://localhost
-   ```
+NOTICE: First run can take A WHILE. It is building the location cache database. That process can take up to 15 minutes or more.
 
-4. **Access the application:**
-   - Frontend: http://localhost (nginx on port 80)
-   - API: http://localhost:8080/api (see [API.md](API.md) for documentation)
+3. **Access the application:**
+   http://localhost:88
 
 ## Configuration
 
 ### Environment Variables
 
-Copy `env.example` to `.env` and configure the following variables:
+Copy `env.example` to `.env` in root folder (next to docker-compose.yml) and configure the following variables:
 
-- `AISSTREAM_API_KEY`: Your AIS Stream API key from [https://aisstream.io/](https://aisstream.io/)
-- `MAPBOX_TOKEN`: Your Mapbox access token from [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/)
-- `CESIUM_ION_TOKEN`: Your Cesium Ion API token from [https://cesium.com/ion/](https://cesium.com/ion/) (optional)
-- `OPENWEATHERMAP_API_KEY`: Your OpenWeatherMap API key from [https://openweathermap.org/api](https://openweathermap.org/api) (optional)
-- `LOCATION_MIN_POPULATION`: Minimum population for locations to be included in the geodb (default: 0)
+- `AISSTREAM_API_KEY`: Your AIS Stream API key
+- `MAPBOX_TOKEN`: Your Mapbox access token
+- `CESIUM_ION_TOKEN`: Your Cesium Ion API token
+- `OPENWEATHERMAP_API_KEY`: Your OpenWeatherMap API key
 
 The frontend will automatically load API tokens from the API at runtime.
 
@@ -98,28 +92,16 @@ The frontend will automatically load API tokens from the API at runtime.
   - **Memory Store**: In-memory data layer for fast data transfer between services
   - **Proxy Server**: Handles WebSocket connections and service routing
 - **Frontend**: Static web app with interactive map visualization using Cesium/Leaflet
-- **Database**: PostgreSQL with PostGIS for spatial data
-
-## Requirements
-
-- **Docker & Docker Compose** (recommended for production)
-- **Python 3.x** (for local development)
-- **PostgreSQL with PostGIS** (automatically handled by Docker)
+- **Database**: PostgreSQL
+- **PostgreSQL** (automatically handled by Docker)
 
 ## Development
 
 ### Testing
 
-Run the test suite using Playwright for browser automation:
+Run the test suite using Playwright for browser automation tests:
 ```bash
 python tests/runner.py
-```
-
-### Frontend Debugging
-
-For development debugging of frontend code:
-```bash
-python dev_scripts/frontend_debug.py
 ```
 
 ## Contributing
