@@ -676,10 +676,8 @@ class NewsSidebar {
     }
     
     show() {
-        console.log('Sidebar: show() called');
         if (this.container) {
             this.container.classList.add('visible');
-            console.log('Sidebar: added visible class');
         } else {
             console.error('Sidebar: container not found');
         }
@@ -770,7 +768,6 @@ class NewsSidebar {
         }
 
         // Always display clusters (even if empty) - NO individual items allowed
-        console.log(`Sidebar: Displaying ${clusters ? clusters.length : 0} clusters for location ${locationKey}`);
         this.updateClusters(clusters, locationName, locationKey, previousLocationKey);
     }
     
@@ -908,30 +905,21 @@ class NewsSidebar {
      * @param {string} previousLocationKey - Previous location key (for detecting location changes)
      */
     updateClusters(clusters, location, locationKey, previousLocationKey) {
-        console.log('Sidebar: updateClusters called with', clusters ? clusters.length : 0, 'clusters for', location, 'key:', locationKey);
         // Detect location change by comparing locationKey (not location name)
         const isNewLocation = previousLocationKey !== locationKey;
 
         // Filter clusters by time range if filter is enabled (use centralized manager)
         let filteredClusters = clusters;
-        console.log('Sidebar: updateClusters called with', clusters ? clusters.length : 0, 'clusters');
         if (window.timeFilterManager && window.timeFilterManager.isFilterActive() && clusters) {
-            console.log('Sidebar: Time filtering is active');
-            const beforeFilter = clusters.length;
             filteredClusters = clusters.filter(cluster => {
                 if (!cluster.items || cluster.items.length === 0) {
-                    console.log('Sidebar: Cluster', cluster.cluster_id, 'has no items');
                     return false;
                 }
                 const hasValidItems = cluster.items.some(item => {
                     return window.timeFilterPanel.filterItems([item]).length > 0;
                 });
-                console.log('Sidebar: Cluster', cluster.cluster_id, 'has', cluster.items.length, 'items, valid after time filter:', hasValidItems);
                 return hasValidItems;
             });
-            console.log('Sidebar: Time filtering reduced clusters from', beforeFilter, 'to', filteredClusters.length);
-        } else {
-            console.log('Sidebar: No time filtering applied');
         }
 
         this.articles = filteredClusters.flatMap(c => c.items || []);
@@ -1446,7 +1434,6 @@ class NewsSidebar {
         
         // Generate media HTML for expanded view
         const mediaHtml = this._generateMediaHtml(article.media_urls);
-        console.log('Sidebar: Article media_urls:', article.media_urls, 'generated HTML:', mediaHtml ? 'YES' : 'NO');
         
         // Generate quoted tweet HTML for expanded view
         const quotedTweetHtml = this._generateQuotedTweetHtml(article.quotedTweet);
@@ -1483,24 +1470,18 @@ class NewsSidebar {
     }
     
     _toggleExpand(button) {
-        console.log('Sidebar: _toggleExpand called');
         const item = button.closest('.sidebar-item');
         const collapsed = item.querySelector('.sidebar-item-collapsed');
         const expanded = item.querySelector('.sidebar-item-expanded');
         const icon = button.querySelector('i');
 
-        console.log('Sidebar: expanded element:', expanded);
-        console.log('Sidebar: expanded content:', expanded ? expanded.innerHTML : 'null');
-
         if (expanded.style.display === 'none') {
-            console.log('Sidebar: Expanding item');
             // Expand
             collapsed.style.display = 'none';
             expanded.style.display = 'block';
             icon.className = 'fa-solid fa-chevron-up';
             item.classList.add('expanded');
         } else {
-            console.log('Sidebar: Collapsing item');
             // Collapse
             collapsed.style.display = 'block';
             expanded.style.display = 'none';
@@ -1510,36 +1491,24 @@ class NewsSidebar {
     }
     
     _generateMediaHtml(media_urls) {
-        console.log('Sidebar: _generateMediaHtml called with media_urls:', media_urls);
-
         if (!Array.isArray(media_urls) || media_urls.length === 0) {
-            console.log('Sidebar: No media URLs provided or not an array');
             return '';
         }
-
-        console.log('Sidebar: Processing', media_urls.length, 'media URLs');
 
         // First: classify and keep only supported media
         const mediaItems = media_urls
             .map(url => {
-                console.log('Sidebar: Processing URL:', url);
                 if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url)) {
-                    console.log('Sidebar: Found image:', url);
                     return { type: 'image', url };
                 }
                 if (/\.(mp4|mov|avi|webm|ogv|m4v)$/i.test(url)) {
-                    console.log('Sidebar: Found video:', url);
                     return { type: 'video', url };
                 }
-                console.warn(`Sidebar: Unknown media type: ${url}`);
                 return null;
             })
             .filter(Boolean);
 
-        console.log('Sidebar: Filtered to', mediaItems.length, 'valid media items');
-
         if (mediaItems.length === 0) {
-            console.log('Sidebar: No valid media items found');
             return '';
         }
 
@@ -1556,8 +1525,6 @@ class NewsSidebar {
             gridClass = 'grid-3x2';
         }
 
-        console.log('Sidebar: Using grid class:', gridClass, 'for', mediaCount, 'items');
-
         // Third: render HTML
         let html = `<div class="sidebar-media-holder ${gridClass}">`;
 
@@ -1571,7 +1538,6 @@ class NewsSidebar {
         }
 
         html += '</div>';
-        console.log('Sidebar: Generated HTML:', html);
         return html;
     }
     
