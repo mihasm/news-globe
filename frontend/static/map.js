@@ -33,19 +33,8 @@ var rainviewerControl = L.control.rainviewer({
     opacity: 0.5
 }).addTo(map);
 
-// Hide the rainviewer control UI by default (controlled via layers panel)
-var rainviewerContainer = document.querySelector('.leaflet-control-rainviewer');
-if (rainviewerContainer) {
-    rainviewerContainer.style.display = 'none';
-}
+// Rainviewer control is now always visible in bottom right
 
-// Global function to toggle weather radar
-window.toggleWeatherRadar = function(enabled) {
-    var container = document.querySelector('.leaflet-control-rainviewer');
-    if (container) {
-        container.style.display = enabled ? '' : 'none';
-    }
-};
 
 // Initialize LayerManager early if available (before change_tiles)
 if (window.layerManager && window.map) {

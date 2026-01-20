@@ -348,15 +348,6 @@ document.addEventListener("keypress", function onEvent(event) {
 /* LAYERS PANEL CONTROLS */
 
 
-// Weather Radar toggle - controls rainviewer visibility
-var layer_weather_radar = document.getElementById('layer_weather_radar');
-if (layer_weather_radar) {
-    layer_weather_radar.addEventListener('change', function(event) {
-        if (typeof toggleWeatherRadar === 'function') {
-            toggleWeatherRadar(layer_weather_radar.checked);
-        }
-    });
-}
 
 // Marker mode radio buttons
 var marker_mode_cluster = document.getElementById('marker_mode_cluster');
@@ -405,7 +396,6 @@ if (cesium_imagery_select) {
 function updateLayersPanelForMode(mode) {
     var section3dViz = document.getElementById('section_3d_viz');
     var section2dViz = document.getElementById('section_2d_viz');
-    var sectionOverlays = document.getElementById('section_overlays');
     var rowBaseLayer = document.getElementById('row_base_layer');
     var row2dBase = document.getElementById('row_2d_base');
     var row3dBase = document.getElementById('row_3d_base');
@@ -451,7 +441,6 @@ function updateLayersPanelForMode(mode) {
         // Show 3D sections, hide 2D-specific sections
         if (section3dViz) section3dViz.style.display = '';
         if (section2dViz) section2dViz.style.display = 'none';
-        if (sectionOverlays) sectionOverlays.style.display = 'none';
         // Show unified base layer selector, hide legacy selectors
         if (rowBaseLayer) rowBaseLayer.style.display = '';
         if (row2dBase) row2dBase.style.display = 'none';
@@ -464,7 +453,6 @@ function updateLayersPanelForMode(mode) {
         // Show 2D sections, hide 3D-specific sections
         if (section3dViz) section3dViz.style.display = 'none';
         if (section2dViz) section2dViz.style.display = '';
-        if (sectionOverlays) sectionOverlays.style.display = '';
         // Show unified base layer selector, hide legacy selectors
         if (rowBaseLayer) rowBaseLayer.style.display = '';
         if (row2dBase) row2dBase.style.display = 'none';
