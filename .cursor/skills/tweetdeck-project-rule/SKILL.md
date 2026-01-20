@@ -38,6 +38,8 @@ Services with code volumes (restart only needed): api, supervisor, ingestion, cl
 
 Services that may need rebuild: any service when Dockerfile changes, any service when requirements.txt changes, infrastructure changes.
 
+Location Service (Rust): Requires compilation when Rust source code (.rs files) is modified. Use `docker-compose build location` followed by `docker-compose restart location`. Cargo.toml changes also require rebuild.
+
 Schema sql generation rules
 
 Never write alter statements into sql init file. This file is only used for initialization on first postgres container startup.

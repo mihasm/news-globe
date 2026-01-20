@@ -63,11 +63,14 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-newsglobe}
       MEMORY_STORE_URL: http://memory-store:6379
+      LOCATION_SERVICE_URL: http://location:8787
     volumes:
       - ./shared:/app/shared:ro
       - ./services/ingestion:/app:rw
     depends_on:
       memory-store:
+        condition: service_started
+      location:
         condition: service_started
       postgres:
         condition: service_healthy
@@ -104,6 +107,22 @@ services:
       - ./services/memory-store:/app:rw
     ports:
       - "6379:6379"
+    networks:
+      - newsglobe_network
+
+  location:
+    build:
+      context: services/location
+      dockerfile: Dockerfile
+      args:
+        MIN_POPULATION: ${LOCATION_MIN_POPULATION:-1000}
+    container_name: newsglobe_location
+    environment:
+      MIN_POPULATION: ${LOCATION_MIN_POPULATION:-1000}
+    volumes:
+      - ./shared:/app/shared:rw
+    ports:
+      - "8787:8787"
     networks:
       - newsglobe_network
 

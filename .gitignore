@@ -26,6 +26,12 @@ wheels/
 *.egg
 MANIFEST
 
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+**/*.pdb
+
 # Database
 *.db
 *.db-shm
@@ -51,6 +57,9 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Data files
+shared/data/
 
 # Test logs
 tests/logs/

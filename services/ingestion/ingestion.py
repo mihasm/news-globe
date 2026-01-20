@@ -58,8 +58,9 @@ class EventsIngestionService:
         from shared.models.database import initialize_database
         initialize_database()
 
-        # GeoNames resolver (your existing component)
-        self.location_getter = LocationGetter()
+        # Location service resolver
+        location_service_url = os.getenv("LOCATION_SERVICE_URL", "http://location:8787")
+        self.location_getter = LocationGetter(service_url=location_service_url)
 
         # spaCy multilingual NER model (installed in entrypoint)
         model_name = os.getenv("SPACY_MODEL", "xx_ent_wiki_sm")

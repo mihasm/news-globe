@@ -60,6 +60,7 @@ Copy `env.example` to `.env` and configure the following variables:
 - `MAPBOX_TOKEN`: Your Mapbox access token from [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/)
 - `CESIUM_ION_TOKEN`: Your Cesium Ion API token from [https://cesium.com/ion/](https://cesium.com/ion/) (optional)
 - `OPENWEATHERMAP_API_KEY`: Your OpenWeatherMap API key from [https://openweathermap.org/api](https://openweathermap.org/api) (optional)
+- `LOCATION_MIN_POPULATION`: Minimum population for locations to be included in the geodb (default: 0)
 
 The frontend will automatically load API tokens from the API at runtime.
 
@@ -71,7 +72,8 @@ The frontend will automatically load API tokens from the API at runtime.
 
 2. **Ingestion**:
    - Ingestion service continuously polls Memory Store for new records
-   - Performs NLP-based geocoding for location extraction from unstructured text
+   - Performs NLP-based geocoding for location extraction from unstructured text using spaCy
+   - Resolves location names using the Location Service (GeoNames-based geocoding)
    - Validates and normalizes data, stores in PostgreSQL with deduplication
 
 3. **Clustering**:
@@ -92,6 +94,7 @@ The frontend will automatically load API tokens from the API at runtime.
   - **Supervisor**: Orchestrates data collection from all connectors
   - **Ingestion Service**: Processes raw data with NLP/geocoding and deduplication
   - **Clustering Service**: Groups related events using spaCy vectors and fuzzy matching
+  - **Location Service**: GeoNames-based geocoding service for location resolution
   - **Memory Store**: In-memory data layer for fast data transfer between services
   - **Proxy Server**: Handles WebSocket connections and service routing
 - **Frontend**: Static web app with interactive map visualization using Cesium/Leaflet

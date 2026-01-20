@@ -12,8 +12,6 @@ COPY shared /app/shared
 COPY services/ingestion /app
 
 ENV PYTHONPATH=/app/shared:$PYTHONPATH
-ENV GEONAMES_DB=/app/shared/data/geonames.db
-ENV GEONAMES_MIN_POP=1000
 
 RUN pip install --no-cache-dir -r requirements.txt
 
