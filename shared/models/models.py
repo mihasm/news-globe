@@ -22,6 +22,10 @@ from peewee import (
 
 from .database import BaseModel, database
 
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 # ============================================================================
 # Database Models (Peewee ORM)
@@ -131,7 +135,7 @@ class IngestionRecord:
 
     All connectors must output records in this format for uniform processing.
     """
-    source: str  # gdelt|telegram|mastodon|usgs|gdacs|adsb|ais
+    source: str  # gdelt|telegram|mastodon|adsb|ais|rss
     source_id: str  # unique per source item (URL, message id, quake id, etc.)
     collected_at: int  # unix timestamp in seconds
 
@@ -147,16 +151,16 @@ class IngestionRecord:
     entities: Optional[Dict[str, Any]] = None  # callsign, mmsi, icao, magnitude, alert_level, etc.
 
     # Geographic information
-    location: Optional[Dict[str, Any]] = None
+    location_name: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
 
-    # Debug/raw data
+    # Debug info
     raw: Optional[Dict[str, Any]] = None  # original payload for debugging
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         data = asdict(self)
-
-        # Location is already a dict
 
         # Remove None values for cleaner JSON
         return {k: v for k, v in data.items() if v is not None}
@@ -171,14 +175,8 @@ class IngestionRecord:
         # Get valid field names from the dataclass
         valid_fields = {f.name for f in fields(cls)}
 
-        # Handle location separately
-        location_data = data.pop('location', None)
-
         # Filter out unknown fields
         filtered_data = {k: v for k, v in data.items() if k in valid_fields}
-
-        if location_data:
-            filtered_data['location'] = location_data
 
         # Validate required fields are present
         required_fields = {'source', 'source_id', 'collected_at'}
@@ -205,15 +203,17 @@ class IngestionRecord:
 
     def has_location(self) -> bool:
         """Check if record has geographic coordinates."""
-        return self.location is not None and self.location.get('lat') is not None and self.location.get('lon') is not None
+        test = self.lat is not None and self.lon is not None
+        if not test:
+            logger.warning(f"No location data for {self.source}:{self.source_id}")
+            logger.warning(f"Lat: {self.lat}, Lon: {self.lon}")
+        return test
 
     def get_bbox(self) -> Optional[List[float]]:
-        """Get bounding box, either from location or inferred from point."""
-        if self.location and self.location.get('bbox'):
-            return self.location['bbox']
-        elif self.has_location():
+        """Get bounding box inferred from point."""
+        if self.has_location():
             # Create small bbox around point (1km buffer)
-            lat, lon = self.location['lat'], self.location['lon']
+            lat, lon = self.lat, self.lon
             buffer = 0.01  # roughly 1km
             return [lat - buffer, lat + buffer, lon - buffer, lon + buffer]
         return None
@@ -234,7 +234,7 @@ def validate_record(record: IngestionRecord) -> List[str]:
 
     if not record.source:
         errors.append("source is required")
-    elif record.source not in {'gdelt', 'telegram', 'mastodon', 'usgs', 'gdacs', 'adsb', 'ais', 'rss'}:
+    elif record.source not in {'gdelt', 'telegram', 'mastodon', 'adsb', 'ais', 'rss'}:
         errors.append(f"invalid source: {record.source}")
 
     if not record.source_id:
@@ -243,15 +243,12 @@ def validate_record(record: IngestionRecord) -> List[str]:
     if record.collected_at <= 0:
         errors.append("collected_at must be positive unix timestamp")
 
-    # Validate location bbox format
-    if record.location and record.location.get('bbox'):
-        bbox = record.location['bbox']
-        if len(bbox) != 4:
-            errors.append("bbox must have exactly 4 elements [lamin, lamax, lomin, lomax]")
-        elif not all(isinstance(x, (int, float)) for x in bbox):
-            errors.append("bbox elements must be numbers")
-        elif bbox[0] > bbox[1] or bbox[2] > bbox[3]:
-            errors.append("bbox must be [lamin, lamax, lomin, lomax] with min <= max")
+    # Validate location coordinates
+    if record.lat is not None and record.lon is not None:
+        if not (-90 <= record.lat <= 90):
+            errors.append("latitude must be between -90 and 90")
+        if not (-180 <= record.lon <= 180):
+            errors.append("longitude must be between -180 and 180")
 
     return errors
 

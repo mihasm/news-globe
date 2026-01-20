@@ -14,6 +14,7 @@ import time
 import requests
 from typing import List, Dict, Optional, Iterator
 from datetime import datetime
+import traceback
 
 from shared.models.models import IngestionRecord, validate_record
 from shared.models.database import database
@@ -211,7 +212,9 @@ class EventsIngestionService:
                     continue
 
                 location_name, lat, lng, area, similarity = resolved
-                rec.location = {"lat": lat, "lon": lng, "place_name": location_name}
+                rec.location_name = location_name
+                rec.lat = lat
+                rec.lon = lng
                 self.stats["location_resolved"] += 1
 
             except Exception as e:
@@ -224,18 +227,24 @@ class EventsIngestionService:
           0 duplicate ignored
          -1 no location
          -2 missing published_at
+         -3 error
         """
         if not record.has_location():
+            logger.warning(f"No location data for {record.source}:{record.source_id}")
             return -1
         if record.published_at is None:
+            logger.warning(f"Missing published_at for {record.source}:{record.source_id}")
             return -2
+        if record.source == 'mastodon' and 'emsc' in record.source_id:
+            return -3 # ignore emsc tweets
 
         # Convert timestamps safely
+        # TODO: THIS SHOULD BE HANDLED BY THE INGESTION BEFORE THIS FUNCTION IS CALLED
         try:
             collected_at_dt = datetime.fromtimestamp(record.collected_at)
         except (ValueError, OSError) as e:
             logger.warning(f"Invalid collected_at timestamp for {record.source}:{record.source_id}: {record.collected_at}")
-            return 0
+            return -3
 
         # Convert published_at string to datetime if present
         published_at_dt = None
@@ -246,6 +255,8 @@ class EventsIngestionService:
                 except ValueError:
                     # If parsing fails, use None
                     published_at_dt = None
+                    logger.warning(f"Invalid published_at for {record.source}:{record.source_id}: {record.published_at}")
+                    return -3
             else:
                 published_at_dt = record.published_at
 
@@ -259,9 +270,9 @@ class EventsIngestionService:
                 title=record.title,
                 text=record.text,
                 url=record.url,
-                location_name=record.location.get("place_name") if record.location else None,
-                lat=record.location.get("lat") if record.location else None,
-                lon=record.location.get("lon") if record.location else None,
+                location_name=record.location_name,
+                lat=record.lat,
+                lon=record.lon,
                 author=record.author,
             )
 
@@ -362,6 +373,7 @@ class EventsIngestionService:
                 break
             except Exception as e:
                 logger.error(f"Error in continuous processing loop: {e}")
+                traceback.print_exc()
                 time.sleep(poll_interval)
 
 

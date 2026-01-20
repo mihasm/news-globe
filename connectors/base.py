@@ -62,7 +62,9 @@ class BaseConnector(abc.ABC):
         published_at: Optional[str] = None,
         media_urls: Optional[list] = None,
         entities: Optional[Dict[str, Any]] = None,
-        location_data: Optional[Dict[str, Any]] = None,
+        location_name: Optional[str] = None,
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
         raw: Optional[Dict[str, Any]] = None,
         author: Optional[str] = None,
     ) -> IngestionRecord:
@@ -77,7 +79,9 @@ class BaseConnector(abc.ABC):
             published_at: Optional ISO datetime string
             media_urls: Optional list of media URLs
             entities: Optional structured data (magnitude, alert_level, etc.)
-            location_data: Optional dict with lat/lon/bbox/place_name
+            location_name: Optional location name/place name
+            lat: Optional latitude
+            lon: Optional longitude
             raw: Optional original payload for debugging
             author: Optional author/creator of the content
 
@@ -95,7 +99,9 @@ class BaseConnector(abc.ABC):
             published_at=published_at,
             media_urls=media_urls,
             entities=entities,
-            location=location_data,
+            location_name=location_name,
+            lat=lat,
+            lon=lon,
             raw=raw,
             author=author,
         )

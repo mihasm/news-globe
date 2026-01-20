@@ -14,8 +14,6 @@ from .base import BaseConnector
 from .gdelt import GDELTConnector
 from .telegram import TelegramConnector
 from .mastodon import MastodonConnector
-from .usgs import USGSConnector
-from .gdacs import GDACSConnector
 from .rss import RSSConnector
 
 # Registry of all available connectors
@@ -23,8 +21,6 @@ CONNECTORS: Dict[str, Type[BaseConnector]] = {
     'gdelt': GDELTConnector,
     'telegram': TelegramConnector,
     'mastodon': MastodonConnector,
-    'usgs': USGSConnector,
-    'gdacs': GDACSConnector,
     'rss': RSSConnector,
 }
 

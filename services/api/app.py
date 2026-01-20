@@ -6,6 +6,8 @@ Endpoints:
 - GET    /api/clusters              (GeoJSON clusters, from events_schema models)
 - GET    /api/adsb                  (bbox -> external fetch_adsb)
 - GET    /api/ais                   (bbox -> external fetch_ais)
+- GET    /api/gdacs                 (feed -> GDACS GeoJSON)
+- GET    /api/usgs                  (feed -> USGS GeoJSON)
 - DELETE /api/delete-all            (delete tweets/news + events clusters/items)
 
 Notes:
@@ -147,11 +149,7 @@ async def _query_clusters(since_time: Optional[datetime], limit: int) -> List[Di
         items_query = (
             NormalizedItem.select()
             .where(
-                (NormalizedItem.cluster_id == cluster.cluster_id) &
-                ~(
-                    (NormalizedItem.source == 'mastodon') &
-                    (NormalizedItem.source_id.contains('emsc'))
-                )
+                (NormalizedItem.cluster_id == cluster.cluster_id)
             )
             .order_by(NormalizedItem.published_at.desc())
         )
@@ -297,6 +295,42 @@ class APIServer:
             logger.error("Error in get_ais: %s", e, exc_info=True)
             return web.json_response({"error": str(e)}, status=500, headers=CORS_HEADERS)
 
+    async def get_gdacs(self, request: web.Request) -> web.Response:
+        try:
+            feed = request.query.get("feed", "geojson")
+            if feed not in {"geojson", "rss", "rss_24h", "rss_7d"}:
+                return web.json_response(
+                    {"error": "Invalid feed. Supported: geojson, rss, rss_24h, rss_7d"},
+                    status=400,
+                    headers=CORS_HEADERS,
+                )
+
+            from gdacs_api import fetch_gdacs  # external
+
+            data = await fetch_gdacs(feed=feed)
+            return web.json_response(data, headers=CORS_HEADERS)
+        except Exception as e:
+            logger.error("Error in get_gdacs: %s", e, exc_info=True)
+            return web.json_response({"error": str(e)}, status=500, headers=CORS_HEADERS)
+
+    async def get_usgs(self, request: web.Request) -> web.Response:
+        try:
+            feed = request.query.get("feed", "significant_hour")
+            if feed not in {"all_hour", "all_day", "significant_hour", "significant_day"}:
+                return web.json_response(
+                    {"error": "Invalid feed. Supported: all_hour, all_day, significant_hour, significant_day"},
+                    status=400,
+                    headers=CORS_HEADERS,
+                )
+
+            from usgs_api import fetch_usgs  # external
+
+            data = await fetch_usgs(feed=feed)
+            return web.json_response(data, headers=CORS_HEADERS)
+        except Exception as e:
+            logger.error("Error in get_usgs: %s", e, exc_info=True)
+            return web.json_response({"error": str(e)}, status=500, headers=CORS_HEADERS)
+
     # -------- Stats endpoint --------
     async def get_stats(self, request: web.Request) -> web.Response:
         try:
@@ -360,6 +394,8 @@ class APIServer:
         self.app.router.add_get("/api/clusters", self.get_clusters)
         self.app.router.add_get("/api/adsb", self.get_adsb)
         self.app.router.add_get("/api/ais", self.get_ais)
+        self.app.router.add_get("/api/gdacs", self.get_gdacs)
+        self.app.router.add_get("/api/usgs", self.get_usgs)
         self.app.router.add_get("/api/stats", self.get_stats)
         self.app.router.add_delete("/api/delete-all", self.delete_all_data)
 

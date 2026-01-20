@@ -110,7 +110,6 @@ class GDELTConnector(BaseConnector):
                 'language': article.get('language'),
                 'source_country': article.get('sourceCountry'),
             },
-            location_data=location_data,
             raw=article,  # Keep original for debugging
         )
 

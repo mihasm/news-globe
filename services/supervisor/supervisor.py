@@ -87,20 +87,6 @@ class SupervisorService:
                     'hashtags': ['news', 'breaking', 'earthquake', 'protest']
                 }
             ),
-            'usgs': ConnectorSchedule(
-                name='usgs',
-                interval_seconds=300,  # 5 minutes
-                config={
-                    'feed': 'all_hour'
-                }
-            ),
-            'gdacs': ConnectorSchedule(
-                name='gdacs',
-                interval_seconds=600,  # 10 minutes
-                config={
-                    'feed': 'geojson'
-                }
-            ),
             'rss': ConnectorSchedule(
                 name='rss',
                 interval_seconds=300,  # 5 minutes
