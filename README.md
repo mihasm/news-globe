@@ -15,11 +15,11 @@ A multi-source live world events aggregation system that collects, processes, an
 
 ## Prerequisites
 
-Before running News Globe, you'll need:
+Before running NewsGlobe, you'll need:
 
 1. **API Keys:** (optional, but recommended)
    - Mapbox Access Token: Required for nicer map tiles. Get from [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/)
-   - AIS Stream API Key: Required for vessel tracking. Get from [https://aisstream.io/](https://aisstream.io/)
+   - AIS Stream API Key: Required for vessel tracking. Get from [https://aisstream.io/](https://aisstream.io)
    - Cesium Ion API Token: Required for nice Cesium 3D tiles. Get from [https://cesium.com/ion/](https://cesium.com/ion/)
    - OpenWeatherMap API key: Required for drawing weather on map. Get from [https://openweathermap.org/api](https://openweathermap.org/api)
 
@@ -39,7 +39,7 @@ Before running News Globe, you'll need:
 
 2. **Start services with Docker Compose:**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. **Access the application:**
@@ -89,13 +89,11 @@ The frontend will automatically load API tokens from the API at runtime.
   - **API Server**: REST endpoints for data access and configuration
   - **Supervisor**: Orchestrates data collection from all connectors
   - **Ingestion Service**: Processes raw data with NLP/geocoding and deduplication
-  - **Clustering Service**: Groups related events using spaCy vectors and fuzzy matching
+  - **Clustering Service**: Groups related events
   - **Location Service**: GeoNames-based geocoding service for location resolution
   - **Memory Store**: In-memory data layer for fast data transfer between services
-  - **Proxy Server**: Handles WebSocket connections and service routing
 - **Frontend**: Static web app with interactive map visualization using Cesium/Leaflet
-- **Database**: PostgreSQL
-- **PostgreSQL** (automatically handled by Docker)
+- **Database**: PostgreSQL (automatically handled by Docker)
 
 ## Development
 
@@ -103,7 +101,7 @@ The frontend will automatically load API tokens from the API at runtime.
 
 Run the test suite using Playwright for browser automation tests:
 ```bash
-python tests/runner.py
+python test_runner.py
 ```
 
 ## Contributing
