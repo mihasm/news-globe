@@ -14,10 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy shared modules
 COPY shared/ ./shared/
 
-# Copy connectors
-COPY connectors/ ./connectors/
-
-# Copy service code
+# Copy service code (including connectors)
 COPY services/supervisor/ ./
 
 # Create state directory

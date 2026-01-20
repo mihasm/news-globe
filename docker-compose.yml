@@ -46,7 +46,6 @@ services:
     volumes:
       - ./shared:/app/shared:ro
       - ./services/supervisor:/app:rw
-      - ./connectors:/app/connectors:ro
     depends_on:
       memory-store:
         condition: service_started
