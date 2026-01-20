@@ -146,7 +146,13 @@ async def _query_clusters(since_time: Optional[datetime], limit: int) -> List[Di
     for cluster in q:
         items_query = (
             NormalizedItem.select()
-            .where(NormalizedItem.cluster_id == cluster.cluster_id)
+            .where(
+                (NormalizedItem.cluster_id == cluster.cluster_id) &
+                ~(
+                    (NormalizedItem.source == 'mastodon') &
+                    (NormalizedItem.source_id.contains('emsc'))
+                )
+            )
             .order_by(NormalizedItem.published_at.desc())
         )
 
