@@ -1,4 +1,5 @@
 ![NewsGlobe Screenshot](screenshot.png)
+![NewsGlobe Screenshot 2](screenshot2.png)
 
 # NewsGlobe
 
