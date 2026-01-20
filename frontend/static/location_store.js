@@ -244,37 +244,6 @@ class LocationStore {
             }
         }
     }
-    
-    /**
-     * Extract keywords from HTML content (kept for backward compatibility)
-     * Looks for common patterns in tweet/news HTML
-     * @param {string} html - HTML content
-     * @returns {Array} Array of keywords
-     */
-    extractKeywords(html) {
-        const keywords = [];
-
-        // Extract hashtags
-        const hashtagMatches = html.match(/#\w+/g);
-        if (hashtagMatches) {
-            keywords.push(...hashtagMatches.map(h => h.toLowerCase()));
-        }
-
-        // Extract mentions
-        const mentionMatches = html.match(/@\w+/g);
-        if (mentionMatches) {
-            keywords.push(...mentionMatches.slice(0, 3));  // Limit mentions
-        }
-
-        // Look for data attributes with keywords
-        const keywordAttrMatch = html.match(/data-keywords="([^"]+)"/);
-        if (keywordAttrMatch) {
-            keywords.push(...keywordAttrMatch[1].split(',').map(k => k.trim()));
-        }
-
-        // Deduplicate
-        return [...new Set(keywords)];
-    }
 }
 
 // Create global instance
