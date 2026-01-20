@@ -732,7 +732,7 @@ class EventsClusteringService:
             try:
                 cluster = Cluster.get(Cluster.cluster_id == cluster_id)
             except Cluster.DoesNotExist:
-                logger.warning(f"Cluster {cluster_id} does not exist")
+                logger.warning(f"Cluster {cluster_id} does not exist, removing from cache")
                 # Remove stale cluster from cache
                 if self.cluster_index:
                     self.cluster_index.entries = [e for e in self.cluster_index.entries if e.cluster_id != cluster_id]
