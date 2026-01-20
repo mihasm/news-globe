@@ -6,7 +6,8 @@ A multi-source live world events aggregation system that collects, processes, an
 
 ## Features
 
-- **Multi-source ingestion**: RSS, Telegram, Mastodon, GDELT, GDACS, USGS
+- **Multi-source ingestion**: RSS, Telegram, Mastodon, GDELT
+- **Direct data sources**: GDACS (hazards), USGS (earthquakes) via dedicated API endpoints
 - **Real-time processing**: NLP/geocoding, event clustering, and streaming to frontend
 - **Interactive map**: Web-based visualization with Cesium/Leaflet
 - **Flight & maritime tracking**: ADSB aircraft and AIS vessel data integration
@@ -61,8 +62,9 @@ The frontend will automatically load API tokens from the API at runtime.
 ## Data Pipeline
 
 1. **Collection**:
-   - Supervisor service orchestrates data collection from connectors (GDELT, GDACS, USGS, Telegram, Mastodon, RSS)
+   - Supervisor service orchestrates data collection from connectors (GDELT, Telegram, Mastodon, RSS)
    - Raw data is converted to unified `IngestionRecord` format and stored in Memory Store
+   - **Direct sources**: GDACS hazards and USGS earthquakes are fetched directly by the frontend via dedicated API endpoints
 
 2. **Ingestion**:
    - Ingestion service continuously polls Memory Store for new records
@@ -82,7 +84,8 @@ The frontend will automatically load API tokens from the API at runtime.
 
 ## Architecture
 
-- **Connectors**: Unified connectors for GDELT, GDACS, USGS, Telegram, Mastodon, RSS. Managed by the supervisor service.
+- **Connectors**: Unified connectors for GDELT, Telegram, Mastodon, RSS. Managed by the supervisor service.
+- **Direct API Endpoints**: GDACS and USGS data fetched directly from official sources by the frontend.
 - **Services**:
   - **API Server**: REST endpoints for data access and configuration
   - **Supervisor**: Orchestrates data collection from all connectors
