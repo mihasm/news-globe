@@ -42,10 +42,8 @@ Before running News Globe, you'll need:
    docker-compose up -d
    ```
 
-NOTICE: First run can take A WHILE. It is building the location cache database. That process can take up to 15 minutes or more.
-
 3. **Access the application:**
-   http://localhost:88
+   http://localhost:80
 
 ## Configuration
 
