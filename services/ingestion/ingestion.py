@@ -230,12 +230,13 @@ class EventsIngestionService:
          -3 error
         """
         if not record.has_location():
-            logger.warning(f"No location data for {record.source}:{record.source_id}")
+            logger.debug(f"No location data for {record.source}:{record.source_id}")
             return -1
         if record.published_at is None:
-            logger.warning(f"Missing published_at for {record.source}:{record.source_id}")
+            logger.debug(f"Missing published_at for {record.source}:{record.source_id}")
             return -2
         if record.source == 'mastodon' and 'emsc' in record.source_id:
+            logger.debug(f"Ignoring emsc tweet {record.source}:{record.source_id}")
             return -3 # ignore emsc tweets
 
         # Convert timestamps safely
@@ -243,7 +244,7 @@ class EventsIngestionService:
         try:
             collected_at_dt = datetime.fromtimestamp(record.collected_at)
         except (ValueError, OSError) as e:
-            logger.warning(f"Invalid collected_at timestamp for {record.source}:{record.source_id}: {record.collected_at}")
+            logger.debug(f"Invalid collected_at timestamp for {record.source}:{record.source_id}: {record.collected_at}")
             return -3
 
         # Convert published_at string to datetime if present

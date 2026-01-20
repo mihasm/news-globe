@@ -203,11 +203,7 @@ class IngestionRecord:
 
     def has_location(self) -> bool:
         """Check if record has geographic coordinates."""
-        test = self.lat is not None and self.lon is not None
-        if not test:
-            logger.warning(f"No location data for {self.source}:{self.source_id}")
-            logger.warning(f"Lat: {self.lat}, Lon: {self.lon}")
-        return test
+        return self.lat is not None and self.lon is not None
 
     def get_bbox(self) -> Optional[List[float]]:
         """Get bounding box inferred from point."""

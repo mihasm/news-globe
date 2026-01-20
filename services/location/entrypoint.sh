@@ -5,7 +5,7 @@ set -e
 # Configuration
 MIN_POPULATION=${MIN_POPULATION:-0}
 DATA_DIR="/app/shared/data/location_data"
-DB_PATH="/app/db/geonames.db"
+DB_PATH="$DATA_DIR/geonames.db"
 
 echo "Starting location service with MIN_POPULATION=${MIN_POPULATION}"
 

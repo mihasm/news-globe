@@ -11,7 +11,7 @@ import logging
 import time
 from datetime import datetime
 
-from clustering import EventsClusteringService, ClusteringConfig
+from clustering_service import EventsClusteringService, ClusteringConfig
 
 logger = logging.getLogger(__name__)
 
