@@ -91,7 +91,7 @@ class SupervisorService:
                 name='rss',
                 interval_seconds=300,  # 5 minutes
                 config={
-                    'feeds_file': 'shared/config/rss_feeds.json',
+                    'feeds_file': 'connectors/rss/rss_feeds.json',
                     'max_workers': 8,
                     'request_delay': 1.0
                 }
@@ -266,6 +266,7 @@ class SupervisorService:
                 logger.error(f"No connector class found for {name}")
                 return
 
+            logger.info(f"Starting connector {name} with config: {schedule.config}")
             connector = connector_class(schedule.config)
             self.tasks[name] = asyncio.create_task(
                 self._run_connector_loop(name, connector, schedule)

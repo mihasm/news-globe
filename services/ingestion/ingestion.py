@@ -13,8 +13,14 @@ import logging
 import time
 import requests
 from typing import List, Dict, Optional, Iterator
-from datetime import datetime
+from collections import defaultdict
+from typing import Iterable, Tuple, Set
+from datetime import datetime, timezone
 import traceback
+from enum import IntEnum
+from peewee import DatabaseError, IntegrityError
+import psycopg2
+
 
 from shared.models.models import IngestionRecord, validate_record
 from shared.models.database import database
@@ -23,6 +29,37 @@ from location import LocationGetter
 import spacy
 
 logger = logging.getLogger(__name__)
+
+class StoreResult(IntEnum):
+    INSERTED = 1
+    DUPLICATE = 0
+    NO_LOCATION = -1
+    MISSING_PUBLISHED_AT = -2
+    IGNORED = -3
+    INVALID_COLLECTED_AT = -4
+    INVALID_PUBLISHED_AT = -5
+
+def _to_utc_from_epoch_seconds(ts: float | int) -> datetime:
+    # Raises ValueError / OSError if out of range; caller decides how to handle.
+    return datetime.fromtimestamp(float(ts), tz=timezone.utc)
+
+
+def _parse_published_at(value: object) -> Optional[datetime]:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        # Ensure tz-aware; if naive, assume UTC (or choose to reject).
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return None
+        # Handle Z suffix
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+        dt = datetime.fromisoformat(s)  # raises ValueError if invalid
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    raise TypeError(f"published_at must be datetime|str|None, got {type(value)!r}")
 
 
 class EventsIngestionService:
@@ -35,7 +72,7 @@ class EventsIngestionService:
     3. Enriches missing location using NER -> GeoNames resolver
     """
 
-    def __init__(self, batch_size: int = 50, memory_store_url: str = None):
+    def __init__(self, batch_size: int = 250, memory_store_url: str = None):
         self.batch_size = batch_size
         self.memory_store_url = memory_store_url or os.getenv("MEMORY_STORE_URL", "http://memory-store:6379")
 
@@ -50,6 +87,8 @@ class EventsIngestionService:
             "location_ner_attempted": 0,
             "location_ner_found": 0,
             "location_resolved": 0,
+            "ignored":0,
+            "parsing_error": 0,
         }
 
         database.connect(reuse_if_open=True)
@@ -88,18 +127,19 @@ class EventsIngestionService:
             self._process_batch(batch)
         return self.stats.copy()
 
-    def _process_batch(self, records: List[IngestionRecord]) -> Dict[str, int]:
+    def _process_batch(self, records):
         if not records:
             return self.stats.copy()
 
-        logger.debug(f"Processing batch of {len(records)} records")
+        logger.debug("Processing batch of %d records", len(records))
 
+        # 1) Validate first (cheap)
         valid_records: List[IngestionRecord] = []
         for record in records:
             self.stats["processed"] += 1
             errors = validate_record(record)
             if errors:
-                logger.warning(f"Invalid record {record.source}:{record.source_id}: {errors}")
+                logger.warning("Invalid record %s:%s: %s", record.source, record.source_id, errors)
                 self.stats["validation_errors"] += 1
                 continue
             valid_records.append(record)
@@ -107,33 +147,124 @@ class EventsIngestionService:
         if not valid_records:
             return self.stats.copy()
 
-        # Enrich missing location using spaCy NER -> GeoNames resolver
+        # 2) Dedupe within the incoming batch (cheap, avoids double work)
+        valid_records = self._dedupe_within_batch(valid_records)
+        if not valid_records:
+            return self.stats.copy()
+
+        # 3) Dedupe against DB in bulk (before spaCy/location)
+        valid_records = self._filter_already_ingested(valid_records)
+        if not valid_records:
+            return self.stats.copy()
+
+        # 4) Only now do spaCy/location enrichment (expensive)
         self._enrich_locations_with_spacy(valid_records)
 
-        # Process each record individually to prevent one bad record from aborting the entire batch
+        # 5) Store remaining records (upsert still protects races)
         for record in valid_records:
             try:
                 with database.atomic():
-                    result = self._store_normalized_item(record)
+                    res = self._store_normalized_item(record)
+            except Exception:
+                logger.exception("Error processing record %s:%s", record.source, record.source_id)
+                self.stats["unknown_error"] += 1
+                continue
 
-                    if result == 1:
-                        self.stats["inserted"] += 1
-                    elif result == 0:
-                        self.stats["skipped_duplicates"] += 1
-                    elif result == -1:
-                        self.stats["no_location_data"] += 1
-                    elif result == -2:
-                        self.stats["missing_published_at"] += 1
-                    else:
-                        self.stats["unknown_error"] += 1
-
-            except Exception as e:
-                logger.error(f"Error processing individual record {record.source}:{record.source_id}: {e}")
+            if res == StoreResult.INSERTED:
+                self.stats["inserted"] += 1
+            elif res == StoreResult.DUPLICATE:
+                # This can still happen due to races between workers or
+                # because another process inserted after our precheck.
+                self.stats["skipped_duplicates"] += 1
+            elif res == StoreResult.NO_LOCATION:
+                self.stats["no_location_data"] += 1
+            elif res == StoreResult.MISSING_PUBLISHED_AT:
+                self.stats["missing_published_at"] += 1
+            elif res == StoreResult.INVALID_COLLECTED_AT:
+                logger.info("ERROR for record "+str(record))
+                logger.info("INVALID COLLECTED AT:"+record.collected_at)
+                self.stats["parsing_error"] += 1
+            elif res == StoreResult.INVALID_PUBLISHED_AT:
+                logger.info("ERROR for record "+str(record))
+                logger.info("INVALID PUBLISHED AT:"+record.published_at)
+                self.stats["parsing_error"] += 1
+            elif res == StoreResult.IGNORED:
+                self.stats["ignored"] += 1
+            else:
                 self.stats["unknown_error"] += 1
 
-        logger.info(f"Processed batch of {len(valid_records)} records; stats={self.stats}")
-
+        logger.info("Processed batch of %d records; stats=%s", len(valid_records), self.stats)
         return self.stats.copy()
+
+    def _dedupe_within_batch(self, records: List[IngestionRecord]) -> List[IngestionRecord]:
+        """
+        Removes duplicates inside the incoming batch (same source + source_id).
+        Keeps first occurrence, counts the rest as skipped_duplicates.
+        """
+        seen: Set[Tuple[str, str]] = set()
+        out: List[IngestionRecord] = []
+
+        for r in records:
+            # validate_record should ensure these exist, but be defensive.
+            if not r.source or not r.source_id:
+                out.append(r)
+                continue
+
+            key = (r.source, r.source_id)
+            if key in seen:
+                self.stats["skipped_duplicates"] += 1
+                continue
+            seen.add(key)
+            out.append(r)
+
+        return out
+
+    def _filter_already_ingested(self, records: List[IngestionRecord]) -> List[IngestionRecord]:
+        """
+        Bulk-checks DB for existing (source, source_id) pairs and filters them out
+        before doing any expensive enrichment.
+
+        Implementation groups by source so we can use a simple IN(source_id)
+        per source (fast and Peewee-friendly).
+        """
+        # Group source -> list of ids
+        by_source: Dict[str, List[str]] = defaultdict(list)
+        for r in records:
+            if r.source and r.source_id:
+                by_source[r.source].append(r.source_id)
+
+        if not by_source:
+            return records
+
+        existing: Set[Tuple[str, str]] = set()
+
+        # Query per source (usually a small number of sources), all at once per source.
+        for src, ids in by_source.items():
+            # Guard against huge IN lists if batch_size grows later.
+            # With your default batch_size=250, this is fine.
+            q = (
+                self.NormalizedItem
+                .select(self.NormalizedItem.source, self.NormalizedItem.source_id)
+                .where(
+                    (self.NormalizedItem.source == src) &
+                    (self.NormalizedItem.source_id.in_(ids))
+                )
+            )
+            for row in q:
+                existing.add((row.source, row.source_id))
+
+        if not existing:
+            return records
+
+        out: List[IngestionRecord] = []
+        for r in records:
+            if r.source and r.source_id and (r.source, r.source_id) in existing:
+                self.stats["skipped_duplicates"] += 1
+                continue
+            out.append(r)
+
+        return out
+
 
     def _enrich_locations_with_spacy(self, records: List[IngestionRecord]) -> None:
         # Collect texts to NER only for records missing location
@@ -220,99 +351,101 @@ class EventsIngestionService:
             except Exception as e:
                 logger.error(f"Location resolve failed for {rec.source}:{rec.source_id}: {e}")
 
-    def _store_normalized_item(self, record: IngestionRecord) -> int:
-        """
-        Returns:
-          1 inserted
-          0 duplicate ignored
-         -1 no location
-         -2 missing published_at
-         -3 error
-        """
+    def _store_normalized_item(self, record: IngestionRecord) -> StoreResult:
+        if record.source == "mastodon" and "emsc" in (record.source_id or ""):
+            logger.debug("Ignoring emsc mastodon item %s:%s", record.source, record.source_id)
+            return StoreResult.IGNORED
+
         if not record.has_location():
-            logger.debug(f"No location data for {record.source}:{record.source_id}")
-            return -1
+            logger.debug("No location data for %s:%s", record.source, record.source_id)
+            return StoreResult.NO_LOCATION
+
         if record.published_at is None:
-            logger.debug(f"Missing published_at for {record.source}:{record.source_id}")
-            return -2
-        if record.source == 'mastodon' and 'emsc' in record.source_id:
-            logger.debug(f"Ignoring emsc tweet {record.source}:{record.source_id}")
-            return -3 # ignore emsc tweets
-
-        # Convert timestamps safely
-        # TODO: THIS SHOULD BE HANDLED BY THE INGESTION BEFORE THIS FUNCTION IS CALLED
-        try:
-            collected_at_dt = datetime.fromtimestamp(record.collected_at)
-        except (ValueError, OSError) as e:
-            logger.debug(f"Invalid collected_at timestamp for {record.source}:{record.source_id}: {record.collected_at}")
-            return -3
-
-        # Convert published_at string to datetime if present
-        published_at_dt = None
-        if record.published_at:
-            if isinstance(record.published_at, str):
-                try:
-                    published_at_dt = datetime.fromisoformat(record.published_at.replace('Z', '+00:00'))
-                except ValueError:
-                    # If parsing fails, use None
-                    published_at_dt = None
-                    logger.warning(f"Invalid published_at for {record.source}:{record.source_id}: {record.published_at}")
-                    return -3
-            else:
-                published_at_dt = record.published_at
+            logger.debug("Missing published_at for %s:%s", record.source, record.source_id)
+            return StoreResult.MISSING_PUBLISHED_AT
 
         try:
-            # Create a new NormalizedItem instance to use helper methods
-            item = self.NormalizedItem(
-                source=record.source,
-                source_id=record.source_id,
-                collected_at=collected_at_dt,
-                published_at=published_at_dt,
-                title=record.title,
-                text=record.text,
-                url=record.url,
-                location_name=record.location_name,
-                lat=record.lat,
-                lon=record.lon,
-                author=record.author,
+            collected_at_dt = _to_utc_from_epoch_seconds(record.collected_at)
+        except (ValueError, OSError, TypeError) as e:
+            logger.warning(
+                "Invalid collected_at for %s:%s (%r): %s",
+                record.source, record.source_id, record.collected_at, e
             )
+            return StoreResult.INVALID_COLLECTED_AT
 
-            # Use helper methods for JSON fields
-            try:
-                item.set_media_urls(record.media_urls)
-                item.set_entities(record.entities)
-            except (TypeError, ValueError) as e:
-                logger.warning(f"JSON serialization error for {record.source}:{record.source_id}: {e}")
-                # Set to None if serialization fails
-                item.media_urls = None
-                item.entities = None
+        try:
+            published_at_dt = _parse_published_at(record.published_at)
+        except (ValueError, TypeError) as e:
+            logger.warning(
+                "Invalid published_at for %s:%s (%r): %s",
+                record.source, record.source_id, record.published_at, e
+            )
+            return StoreResult.INVALID_PUBLISHED_AT
 
-            # Check if record already exists to avoid duplicate key errors
-            try:
-                existing = (self.NormalizedItem
-                           .select()
-                           .where((self.NormalizedItem.source == item.source) &
-                                  (self.NormalizedItem.source_id == item.source_id))
-                           .first())
+        if published_at_dt is None:
+            return StoreResult.MISSING_PUBLISHED_AT
 
-                if existing:
-                    # Record already exists
-                    return 0
+        item = self.NormalizedItem(
+            source=record.source,
+            source_id=record.source_id,
+            collected_at=collected_at_dt,
+            published_at=published_at_dt,
+            title=record.title,
+            text=record.text,
+            url=record.url,
+            location_name=record.location_name,
+            lat=record.lat,
+            lon=record.lon,
+            author=record.author,
+        )
 
-                # Record doesn't exist, try to insert
-                item.save(force_insert=True)
-                return 1
+        try:
+            item.set_media_urls(record.media_urls)
+            item.set_entities(record.entities)
+        except (TypeError, ValueError) as e:
+            logger.warning("JSON serialization error for %s:%s: %s", record.source, record.source_id, e)
+            item.media_urls = None
+            item.entities = None
 
-            except Exception as e:
-                # Log any database errors
-                logger.warning(f"Database error storing item {record.source}:{record.source_id}: {e}")
-                return 0
+        # Prefer Postgres upsert "DO NOTHING" to avoid duplicate exceptions entirely.
+        # This requires Postgres (you have it) and Peewee's on_conflict support.
+        data = item.__data__.copy()
+        pk_name = item._meta.primary_key.name
+        data.pop(pk_name, None)
 
-        except Exception as e:
-            # Catch any remaining exceptions to prevent transaction abortion
-            # This includes IntegrityError, DataError, and other Peewee exceptions
-            logger.warning(f"Unexpected error storing item {record.source}:{record.source_id}: {e}")
-            return 0
+        try:
+            ins = (self.NormalizedItem
+                .insert(**data)
+                .on_conflict(
+                    conflict_target=[self.NormalizedItem.source, self.NormalizedItem.source_id],
+                    action="IGNORE",
+                ))
+            res = ins.execute()
+            # Peewee returns inserted PK on success; on conflict IGNORE it returns None/0 depending on version.
+            return StoreResult.INSERTED if res else StoreResult.DUPLICATE
+
+        except (AttributeError, TypeError):
+            # Peewee version doesn’t support action="IGNORE" or on_conflict signature differs -> fallback.
+            pass
+        except IntegrityError:
+            return StoreResult.DUPLICATE
+        except psycopg2.errors.UniqueViolation:
+            return StoreResult.DUPLICATE
+        except DatabaseError:
+            logger.exception("Database error storing item %s:%s", record.source, record.source_id)
+            raise
+
+        # Fallback path (works everywhere): insert-first and catch duplicates.
+        try:
+            item.save(force_insert=True)
+            return StoreResult.INSERTED
+        except IntegrityError:
+            return StoreResult.DUPLICATE
+        except psycopg2.errors.UniqueViolation:
+            return StoreResult.DUPLICATE
+        except DatabaseError:
+            logger.exception("Database error storing item %s:%s", record.source, record.source_id)
+            raise
 
     def get_stats(self) -> Dict[str, int]:
         return self.stats.copy()
@@ -329,6 +462,8 @@ class EventsIngestionService:
             "location_ner_attempted": 0,
             "location_ner_found": 0,
             "location_resolved": 0,
+            "ignored":0,
+            "parsing_error": 0,
         }
 
     def read_from_memory_store(self) -> List[IngestionRecord]:
