@@ -79,12 +79,6 @@ class NewsSidebar {
             limit: 10000
         };
 
-        // Add time filter parameters if enabled (use centralized manager)
-        if (window.timeFilterManager && window.timeFilterManager.isFilterActive()) {
-            const timeParams = window.timeFilterManager.getTimeFilterParams();
-            if (timeParams.time_from) filters.timeFrom = timeParams.time_from;
-            if (timeParams.time_to) filters.timeTo = timeParams.time_to;
-        }
 
         // Get clusters for this location from DataManager
         const clusters = window.dataManager.getClustersForLocation(refreshLocationKey, filters);
@@ -751,12 +745,6 @@ class NewsSidebar {
                 limit: 10000  // Fetch all clusters for this location
             };
 
-            // Add time filter parameters if enabled (use centralized manager)
-            if (window.timeFilterManager && window.timeFilterManager.isFilterActive()) {
-                const timeParams = window.timeFilterManager.getTimeFilterParams();
-                if (timeParams.time_from) filters.timeFrom = timeParams.time_from;
-                if (timeParams.time_to) filters.timeTo = timeParams.time_to;
-            }
 
             // Get clusters for this location from DataManager
             clusters = window.dataManager.getClustersForLocation(locationKey, filters);
@@ -779,33 +767,22 @@ class NewsSidebar {
     update(articles, location) {
         const isNewLocation = this.currentLocation !== location;
         
-        // Filter articles by time range if filter is enabled
-        let filteredArticles = articles;
-        if (window.timeFilterPanel && articles) {
-            filteredArticles = window.timeFilterPanel.filterItems(articles);
-        }
-        
-        this.articles = filteredArticles;
+        this.articles = articles;
         this.currentLocation = location;
         
-        // Update location header with count in parentheses (show filtered count)
+        // Update location header with count in parentheses
         const locationTextEl = this.container.querySelector('.sidebar-location-text');
-        const itemCount = filteredArticles ? filteredArticles.length : 0;
-        const totalCount = articles ? articles.length : 0;
-        if (totalCount !== itemCount && window.timeFilterPanel && window.timeFilterPanel.isFilterEnabled()) {
-            locationTextEl.textContent = `${location || 'Unknown Location'} (${itemCount}/${totalCount})`;
-        } else {
-            locationTextEl.textContent = `${location || 'Unknown Location'} (${itemCount})`;
-        }
+        const itemCount = articles ? articles.length : 0;
+        locationTextEl.textContent = `${location || 'Unknown Location'} (${itemCount})`;
         
         // Update content
         const contentEl = this.container.querySelector('.sidebar-content');
         
-        if (!filteredArticles || filteredArticles.length === 0) {
+        if (!articles || articles.length === 0) {
             contentEl.innerHTML = `
                 <div class="sidebar-empty">
                     <i class="fa-solid fa-inbox"></i>
-                    <p>No items for this location${window.timeFilterManager && window.timeFilterManager.isFilterActive() ? ' (filtered)' : ''}</p>
+                    <p>No items for this location</p>
                 </div>
             `;
             this.displayedItemIds.clear();
@@ -908,21 +885,8 @@ class NewsSidebar {
         // Detect location change by comparing locationKey (not location name)
         const isNewLocation = previousLocationKey !== locationKey;
 
-        // Filter clusters by time range if filter is enabled (use centralized manager)
-        let filteredClusters = clusters;
-        if (window.timeFilterManager && window.timeFilterManager.isFilterActive() && clusters) {
-            filteredClusters = clusters.filter(cluster => {
-                if (!cluster.items || cluster.items.length === 0) {
-                    return false;
-                }
-                const hasValidItems = cluster.items.some(item => {
-                    return window.timeFilterPanel.filterItems([item]).length > 0;
-                });
-                return hasValidItems;
-            });
-        }
 
-        this.articles = filteredClusters.flatMap(c => c.items || []);
+        this.articles = clusters.flatMap(c => c.items || []);
         this.currentLocation = location;
 
         // Update content
@@ -946,13 +910,12 @@ class NewsSidebar {
             contentEl.innerHTML = '';
         }
         
-        if (!filteredClusters || filteredClusters.length === 0) {
-            const filterNote = window.timeFilterManager && window.timeFilterManager.isFilterActive() ? ' (time filter active)' : '';
+        if (!clusters || clusters.length === 0) {
             contentEl.innerHTML = `
                 <div class="sidebar-empty">
                     <i class="fa-solid fa-inbox"></i>
-                    <p>No news clusters found for "${location || locationKey}"${filterNote}</p>
-                    <p style="font-size: 12px; margin-top: 10px;">Try selecting a location with recent news activity, or adjust your time filter.</p>
+                    <p>No news clusters found for "${location || locationKey}"</p>
+                    <p style="font-size: 12px; margin-top: 10px;">Try selecting a location with recent news activity.</p>
                 </div>
             `;
             // Update header
@@ -962,7 +925,7 @@ class NewsSidebar {
         }
         
         // Sort clusters by earliest item datetime (latest cluster at top)
-        const sortedClusters = [...filteredClusters].sort((a, b) => {
+        const sortedClusters = [...clusters].sort((a, b) => {
             const dateA = this._getEarliestItemDatetime(a);
             const dateB = this._getEarliestItemDatetime(b);
             // Handle empty strings (clusters with no items) - put them last

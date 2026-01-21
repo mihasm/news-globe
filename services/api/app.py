@@ -316,7 +316,7 @@ class APIServer:
     async def get_usgs(self, request: web.Request) -> web.Response:
         try:
             feed = request.query.get("feed", "significant_hour")
-            if feed not in {"all_hour", "all_day", "significant_hour", "significant_day"}:
+            if feed not in {"all_hour", "all_day", "all_week", "significant_hour", "significant_day", "significant_week"}:
                 return web.json_response(
                     {"error": "Invalid feed. Supported: all_hour, all_day, significant_hour, significant_day"},
                     status=400,

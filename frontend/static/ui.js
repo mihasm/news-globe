@@ -16,10 +16,6 @@ function close_layers() {
 
 
 
-function close_time_filter_panel() {
-    document.getElementById('time_filter_panel').style.display = "none";
-    button_time_filter_panel.checked=0;
-}
 
 function close_admin_panel() {
     document.getElementById('admin_panel').style.display = "none";
@@ -42,18 +38,6 @@ button_layers_panel.addEventListener('change', (event) => {
     }
 });
 
-var button_time_filter_panel = document.getElementById('button_time_filter');
-var time_filter_panel = document.getElementById("time_filter_panel");
-if (button_time_filter_panel && time_filter_panel) {
-    time_filter_panel.style.display = "none";
-    button_time_filter_panel.addEventListener('change', (event) => {
-        if (button_time_filter_panel.checked) {
-            time_filter_panel.style.display = "";
-        } else {
-            time_filter_panel.style.display = "none";
-        }
-    });
-}
 
 var button_admin_panel = document.getElementById('button_admin_panel');
 var admin_panel = document.getElementById("admin_panel");
@@ -478,130 +462,5 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize to 2D mode
     updateLayersPanelForMode('2d');
-    
-    // Initialize time filter panel controls
-    initializeTimeFilterPanel();
 });
 
-/* TIME FILTER PANEL CONTROLS */
-
-function initializeTimeFilterPanel() {
-    // Wait for time filter panel to be available
-    const initInterval = setInterval(() => {
-        if (window.timeFilterPanel) {
-            clearInterval(initInterval);
-            setupTimeFilterControls();
-        }
-    }, 100);
-}
-
-function setupTimeFilterControls() {
-    const timeFilterPanel = window.timeFilterPanel;
-    
-    // Get initial time range
-    const range = timeFilterPanel.getTimeRange();
-    
-    // Update datetime inputs
-    const fromInput = document.getElementById('time_filter_from');
-    const toInput = document.getElementById('time_filter_to');
-    
-    
-    if (fromInput) {
-        fromInput.value = window.formatDateTimeLocal(range.from);
-        fromInput.addEventListener('change', function() {
-            const fromTime = new Date(this.value).getTime();
-            const toTime = timeFilterPanel.getTimeRange().to;
-            if (fromTime < toTime) {
-                timeFilterPanel.setTimeRange(fromTime, toTime);
-                // timeFilterManager will handle the refresh automatically
-            }
-        });
-        fromInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const fromTime = new Date(this.value).getTime();
-                const toTime = timeFilterPanel.getTimeRange().to;
-                if (fromTime < toTime) {
-                    timeFilterPanel.setTimeRange(fromTime, toTime);
-                    // Update slider handles to match the new time range
-                    if (window.timeFilterManager) {
-                        window.timeFilterManager.syncUIState();
-                    }
-                }
-            }
-        });
-    }
-    
-    if (toInput) {
-        toInput.value = window.formatDateTimeLocal(range.to);
-        toInput.addEventListener('change', function() {
-            const fromTime = timeFilterPanel.getTimeRange().from;
-            const toTime = new Date(this.value).getTime();
-            if (toTime > fromTime) {
-                timeFilterPanel.setTimeRange(fromTime, toTime);
-                // timeFilterManager will handle the refresh automatically
-            }
-        });
-        toInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const fromTime = timeFilterPanel.getTimeRange().from;
-                const toTime = new Date(this.value).getTime();
-                if (toTime > fromTime) {
-                    timeFilterPanel.setTimeRange(fromTime, toTime);
-                    // Update slider handles to match the new time range
-                    if (window.timeFilterManager) {
-                        window.timeFilterManager.syncUIState();
-                    }
-                }
-            }
-        });
-    }
-    
-    // Color pickers
-    const colorFromInput = document.getElementById('time_filter_color_from');
-    const colorToInput = document.getElementById('time_filter_color_to');
-    const colors = timeFilterPanel.getColorGradient();
-    
-    if (colorFromInput) {
-        colorFromInput.value = colors.from;
-        colorFromInput.addEventListener('change', function() {
-            const colorTo = timeFilterPanel.getColorGradient().to;
-            timeFilterPanel.setColorGradient(this.value, colorTo);
-            // timeFilterManager will handle the refresh automatically
-        });
-    }
-    
-    if (colorToInput) {
-        colorToInput.value = colors.to;
-        colorToInput.addEventListener('change', function() {
-            const colorFrom = timeFilterPanel.getColorGradient().from;
-            timeFilterPanel.setColorGradient(colorFrom, this.value);
-            // timeFilterManager will handle the refresh automatically
-        });
-    }
-    
-    // Checkboxes
-    const filterEnabledCheckbox = document.getElementById('time_filter_enabled');
-    const colorCodingCheckbox = document.getElementById('time_filter_color_coding');
-    
-    if (filterEnabledCheckbox) {
-        filterEnabledCheckbox.checked = timeFilterPanel.isFilterEnabled();
-        filterEnabledCheckbox.addEventListener('change', function() {
-            timeFilterPanel.setFilterEnabled(this.checked);
-            // timeFilterManager will handle the refresh automatically
-        });
-    }
-    
-    if (colorCodingCheckbox) {
-        colorCodingCheckbox.checked = timeFilterPanel.isColorCodingEnabled();
-        colorCodingCheckbox.addEventListener('change', function() {
-            timeFilterPanel.setColorCodingEnabled(this.checked);
-            // timeFilterManager will handle the refresh automatically
-        });
-    }
-    
-    
-    // Time filter callbacks are now handled by timeFilterManager
-    // The manager coordinates all filtering operations consistently
-}
-
-// refreshAllVisualizations function removed - now handled by timeFilterManager

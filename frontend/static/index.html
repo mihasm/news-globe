@@ -100,10 +100,6 @@
 
 
 
-        <label class="switch" title="Time Filter">
-            <input type="checkbox" id="button_time_filter"/>
-            <i class="fa-solid fa-lg fa-clock"></i>
-        </label>
 
         <label class="switch" title="Admin">
             <input type="checkbox" id="button_admin_panel"/>
@@ -235,53 +231,6 @@
     </div>
 </div>
 
-<div class="popup" id="time_filter_panel">
-    <div class="popup-header">
-        <div>Time Filter</div>
-        <label class="popup-close-button">
-            <input class="hide" type="button" onclick="close_time_filter_panel()" value="&#10005">
-            <i class="fa-solid fa-xmark"></i>
-        </label>
-    </div>
-    <div class="popup-body">
-        <!-- Time Range Section -->
-        <div class="layers-section">
-            <div class="layers-section-title">Time Range</div>
-            <div class="layers-row">
-                <span class="layers-label">From:</span>
-                <input type="datetime-local" id="time_filter_from" class="time-filter-datetime">
-            </div>
-            <div class="layers-row">
-                <span class="layers-label">To:</span>
-                <input type="datetime-local" id="time_filter_to" class="time-filter-datetime">
-            </div>
-        </div>
-
-        <!-- Color Settings Section -->
-        <div class="layers-section">
-            <div class="layers-section-title">Color Settings</div>
-            <div class="layers-row">
-                <span class="layers-label">Old Color:</span>
-                <input type="color" id="time_filter_color_from" value="#FFC0CB" class="time-filter-color">
-            </div>
-            <div class="layers-row">
-                <span class="layers-label">New Color:</span>
-                <input type="color" id="time_filter_color_to" value="#990000" class="time-filter-color">
-            </div>
-        </div>
-
-        <!-- Options Section -->
-        <div class="layers-section">
-            <div class="layers-section-title">Options</div>
-            <label class="layers-checkbox">
-                <input type="checkbox" id="time_filter_enabled"/> Enable Time Filter
-            </label>
-            <label class="layers-checkbox">
-                <input type="checkbox" id="time_filter_color_coding"/> Enable Color Coding
-            </label>
-        </div>
-    </div>
-</div>
 
 <div id="status_container">
     <i class="fa-solid fa-signal"></i>
@@ -358,8 +307,6 @@
 <script src="tiles.js"></script>
 <script src="data_manager.js"></script>
 <script src="location_store.js"></script>
-<script src="time_filter_panel.js"></script>
-<script src="time_filter_manager.js"></script>
 <script src="ais_adsb_manager.js"></script>
 <script src="map.js"></script>
 <script src="cesium_map.js"></script>
@@ -599,7 +546,7 @@ function hideGDACS() {
 
 // USGS data functions
 function fetchAndDisplayUSGS() {
-    fetch('/api/usgs?feed=significant_day')
+    fetch('/api/usgs?feed=all_week')
         .then(response => response.json())
         .then(data => {
             displayGeoJSONLayer(data, 'usgs');

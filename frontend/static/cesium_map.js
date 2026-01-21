@@ -386,27 +386,18 @@ class CesiumMap {
                     // Process cluster items
                     for (const item of location.items) {
                         if (item.type === 'cluster' && item.cluster_items) {
-                            // Filter cluster items by time if needed
-                            let clusterFilteredItems = item.cluster_items;
-                            if (window.timeFilterPanel) {
-                                clusterFilteredItems = window.timeFilterPanel.filterItems(item.cluster_items);
-                            }
-
-                            if (clusterFilteredItems.length > 0) {
+                            if (item.cluster_items.length > 0) {
                                 filteredItems.push({
                                     ...item,
-                                    cluster_filtered_count: clusterFilteredItems.length
+                                    cluster_filtered_count: item.cluster_items.length
                                 });
-                                totalCount += clusterFilteredItems.length;
+                                totalCount += item.cluster_items.length;
                             }
                         }
                     }
                 } else {
                     // Process individual items
                     filteredItems = location.items;
-                    if (window.timeFilterPanel) {
-                        filteredItems = window.timeFilterPanel.filterItems(location.items);
-                    }
                     totalCount = filteredItems.length;
                 }
             }
@@ -418,55 +409,8 @@ class CesiumMap {
                 continue;
             }
             
-            // Calculate color based on time filter settings
-            let colorHex = '#990000';  // Default red
-            if (window.timeFilterPanel && location) {
-                // For clusters, find the latest item across all cluster items
-                let latestItem = null;
-                let latestTime = 0;
-
-                if (location && location.items && location.items.some(item => item.type === 'cluster')) {
-                    // Handle cluster items
-                    for (const clusterItem of location.items) {
-                        if (clusterItem.type === 'cluster' && clusterItem.cluster_items) {
-                            for (const subItem of clusterItem.cluster_items) {
-                                if (subItem.published_at) {
-                                    const itemTime = new Date(subItem.published_at).getTime();
-                                    if (itemTime > latestTime) {
-                                        latestTime = itemTime;
-                                        latestItem = subItem;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else if (filteredItems.length > 0) {
-                    // Handle individual items
-                    latestItem = filteredItems.reduce((latest, item) => {
-                        if (!item.published_at) return latest;
-                        const itemTime = new Date(item.published_at).getTime();
-                        if (!latest || itemTime > new Date(latest.published_at).getTime()) {
-                            return item;
-                        }
-                        return latest;
-                    }, null);
-                }
-
-                if (latestItem) {
-                    colorHex = window.timeFilterPanel.getColorForItem(latestItem);
-                } else {
-                    colorHex = window.timeFilterPanel.getColorForLocation(location);
-                }
-            } else {
-                // Fallback to old method if time filter panel not available
-                const now = Date.now();
-                const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
-                const lastUpdate = marker.lastUpdate || now;
-                const timePercentage = Math.max(0, Math.min(1, (lastUpdate - oneWeekAgo) / (now - oneWeekAgo)));
-                colorHex = "#" + this.rainbow.colorAt(timePercentage * 100);
-            }
-            
-            const color = new Cesium.Color.fromCssColorString(colorHex);
+            // Use default color
+            const color = new Cesium.Color.fromCssColorString('#990000');
             
             // Create circle
             if (this.showCircles) {

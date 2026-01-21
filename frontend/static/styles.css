@@ -126,7 +126,7 @@ body.sidebar-visible #map {
   display: grid;
 }
 
-#search_panel,#layers_panel,#time_filter_panel,#admin_panel {
+#search_panel,#layers_panel,#admin_panel {
     z-index: 15;
     margin: 12px;
     top: 15px;
@@ -812,47 +812,6 @@ body.sidebar-visible #cesiumContainer {
     text-decoration: underline;
 }
 
-/* ============================================
-   Time Filter Panel Styles
-   ============================================ */
-
-#time_filter_panel {
-    width: 320px;
-    max-height: 80vh;
-}
-
-.time-filter-datetime {
-    flex: 1;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 4px;
-    color: #fff;
-    padding: 6px 8px;
-    font-size: 12px;
-    font-family: Arial, sans-serif;
-}
-
-.time-filter-datetime:hover {
-    border-color: rgba(255,255,255,0.3);
-}
-
-.time-filter-datetime:focus {
-    outline: none;
-    border-color: #00c8ff;
-}
-
-.time-filter-color {
-    flex: 1;
-    height: 32px;
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 4px;
-    cursor: pointer;
-    background: transparent;
-}
-
-.time-filter-color:hover {
-    border-color: rgba(255,255,255,0.3);
-}
 
 
 .noUi-horizontal .noUi-handle {

@@ -15,8 +15,10 @@ from typing import Dict, Any
 USGS_FEEDS = {
     "all_hour": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson",
     "all_day": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
+    "all_week": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson",
     "significant_hour": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_hour.geojson",
     "significant_day": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_day.geojson",
+    "significant_week": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson",
 }
 
 
@@ -30,7 +32,7 @@ async def fetch_usgs(feed: str = 'significant_hour') -> Dict[str, Any]:
     Returns:
         GeoJSON FeatureCollection dict
     """
-    feed_url = USGS_FEEDS.get(feed, USGS_FEEDS['significant_hour'])
+    feed_url = USGS_FEEDS.get(feed, USGS_FEEDS['all_week'])
 
     # Use requests in thread since it's blocking
     import asyncio

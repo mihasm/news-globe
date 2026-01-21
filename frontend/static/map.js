@@ -198,12 +198,6 @@ function refresh_all_items() {
     // Build filter parameters for DataManager
     var filters = {};
 
-    // Add time filter parameters if enabled (use centralized manager)
-    if (window.timeFilterManager && window.timeFilterManager.isFilterActive()) {
-        const timeParams = window.timeFilterManager.getTimeFilterParams();
-        if (timeParams.time_from) filters.timeFrom = timeParams.time_from;
-        if (timeParams.time_to) filters.timeTo = timeParams.time_to;
-    }
 
     // Layer filtering is now handled by DataManager based on checkbox states
 
@@ -444,7 +438,6 @@ function updateClusterCache() {
         window.clusterCache = allClusters;
         //console.log('Cluster cache updated from DataManager:', window.clusterCache.length, 'clusters');
 
-        // Note: We don't call refreshMarkerClusters here anymore since TimeFilterManager
         // now handles map updates through refresh_all_items() which applies current filters
     } else {
         console.warn('DataManager not available for cluster cache update');
@@ -461,7 +454,6 @@ if (clusterCacheUpdateInterval) {
 }
 clusterCacheUpdateInterval = setInterval(updateClusterCache, 10000); // Update every 10 seconds
 
-// Time filter callbacks are now handled by timeFilterManager
 // The manager coordinates all filtering operations consistently
 
 function addmarker(data, options) {
@@ -1060,27 +1052,18 @@ function refreshCircleMarkers() {
             // Process cluster items
             for (const item of items) {
                 if (item.type === 'cluster' && item.cluster_items) {
-                    // Filter cluster items by time if needed
-                    let clusterFilteredItems = item.cluster_items;
-                    if (window.timeFilterManager && window.timeFilterManager.isFilterActive()) {
-                        clusterFilteredItems = window.timeFilterPanel.filterItems(item.cluster_items);
-                    }
-
-                    if (clusterFilteredItems.length > 0) {
+                    if (item.cluster_items.length > 0) {
                         filteredItems.push({
                             ...item,
-                            cluster_filtered_count: clusterFilteredItems.length
+                            cluster_filtered_count: item.cluster_items.length
                         });
-                        totalCount += clusterFilteredItems.length;
+                        totalCount += item.cluster_items.length;
                     }
                 }
             }
         } else {
             // Process individual items (legacy behavior)
             filteredItems = items;
-            if (window.timeFilterManager && window.timeFilterManager.isFilterActive()) {
-                filteredItems = window.timeFilterPanel.filterItems(items);
-            }
             totalCount = filteredItems.length;
         }
 
@@ -1091,52 +1074,12 @@ function refreshCircleMarkers() {
 
         const count = totalCount;
         
-        // Calculate color based on time filter settings
-        let colorHex = '#990000';  // Default red
-        if (window.timeFilterManager && window.timeFilterManager.isFilterActive()) {
-            // For clusters, find the latest item across all cluster items
-            let latestItem = null;
-            let latestTime = 0;
-
-            if (hasClusters) {
-                for (const clusterItem of filteredItems) {
-                    if (clusterItem.type === 'cluster' && clusterItem.cluster_items) {
-                        for (const subItem of clusterItem.cluster_items) {
-                            if (subItem.published_at) {
-                                const itemTime = new Date(subItem.published_at).getTime();
-                                if (itemTime > latestTime) {
-                                    latestTime = itemTime;
-                                    latestItem = subItem;
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                // Individual items - use existing logic
-                latestItem = filteredItems.reduce((latest, item) => {
-                    if (!item.published_at) return latest;
-                    const itemTime = new Date(item.published_at).getTime();
-                    if (!latest || itemTime > new Date(latest.published_at).getTime()) {
-                        return item;
-                    }
-                    return latest;
-                }, null);
-            }
-
-            if (latestItem) {
-                colorHex = window.timeFilterPanel.getColorForItem(latestItem);
-            } else {
-                colorHex = window.timeFilterPanel.getColorForLocation(location);
-            }
-        } else {
-            // Fallback to old method if time filter not active
-            const now = Date.now();
-            const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
-            const lastUpdate = location.lastUpdate || now;
-            const timePercentage = Math.max(0, Math.min(1, (lastUpdate - oneWeekAgo) / (now - oneWeekAgo)));
-            colorHex = "#" + circleRainbow.colorAt(timePercentage * 100);
-        }
+        // Calculate color based on last update time
+        const now = Date.now();
+        const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+        const lastUpdate = location.lastUpdate || now;
+        const timePercentage = Math.max(0, Math.min(1, (lastUpdate - oneWeekAgo) / (now - oneWeekAgo)));
+        const colorHex = "#" + circleRainbow.colorAt(timePercentage * 100);
         
         // Calculate radius using EXACT same formula as Cesium circles
         // Formula: this._erf(height / 3e6) * Math.log(count + 1.5) * 110000
@@ -1283,15 +1226,8 @@ function calculateLocationAggregates(location) {
     let latestTime = 0;
     let latestItem = null;
 
-    // LocationStore.getAllLocations() returns flattened items array
-    // Filter by time if needed
-    let filteredItems = items;
-    if (window.timeFilterManager && window.timeFilterManager.isFilterActive()) {
-        filteredItems = window.timeFilterPanel.filterItems(items);
-    }
-
-    // Process filtered items
-    for (const item of filteredItems) {
+    // Process items
+    for (const item of items) {
         if (item.published_at) {
             const itemTime = new Date(item.published_at).getTime();
             if (itemTime > latestTime) {
@@ -1300,7 +1236,7 @@ function calculateLocationAggregates(location) {
             }
         }
     }
-    totalCount = filteredItems.length;
+    totalCount = items.length;
 
     return { totalCount, latestTime, latestItem };
 }
@@ -1310,10 +1246,7 @@ function updateCircle(circle, aggregated, lat, lng, locationName, key) {
     const { totalCount, latestItem } = aggregated;
 
     // Calculate color
-    let colorHex = '#990000'; // Default red
-    if (window.timeFilterManager && window.timeFilterManager.isFilterActive() && latestItem) {
-        colorHex = window.timeFilterPanel.getColorForItem(latestItem);
-    }
+    const colorHex = '#990000'; // Default red
 
     // Calculate radius using same formula as before
     const height = 5e6;
@@ -1350,10 +1283,7 @@ function createCircle(aggregated, lat, lng, locationName, key) {
     const { totalCount, latestItem } = aggregated;
 
     // Calculate color
-    let colorHex = '#990000'; // Default red
-    if (window.timeFilterManager && window.timeFilterManager.isFilterActive() && latestItem) {
-        colorHex = window.timeFilterPanel.getColorForItem(latestItem);
-    }
+    const colorHex = '#990000'; // Default red
 
     // Calculate radius
     const height = 5e6;
@@ -1455,22 +1385,14 @@ function refreshMarkerClusters() {
         }
     }
 
-    // Determine which clusters should be visible based on time filter
+    // Determine which clusters should be visible (show all with items)
     var validClusterIds = new Set();
-    var timeFilterActive = window.timeFilterManager && window.timeFilterManager.isFilterActive();
 
     for (var cluster of window.clusterCache) {
         var clusterId = cluster.cluster_id;
         var clusterItems = cluster.items || [];
 
-        if (timeFilterActive) {
-            // Check if cluster has any items that pass the time filter
-            var filtered = window.timeFilterPanel.filterItems(clusterItems);
-            if (filtered.length > 0) {
-                validClusterIds.add(clusterId);
-            }
-        } else if (clusterItems.length > 0) {
-            // No time filter, show all clusters with items
+        if (clusterItems.length > 0) {
             validClusterIds.add(clusterId);
         }
     }
