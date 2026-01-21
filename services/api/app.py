@@ -134,24 +134,23 @@ def _clusters_to_geojson(clusters: List[Dict[str, Any]]) -> Dict[str, Any]:
     return {"type": "FeatureCollection", "features": features}
 
 
-async def _query_clusters(since_time: Optional[datetime], limit: int) -> List[Dict[str, Any]]:
-    conditions = []
-    if since_time is not None:
-        conditions.append(Cluster.last_seen_at >= since_time)
-
-    q = Cluster.select()
-    if conditions:
-        q = q.where(*conditions)
-    q = q.order_by(Cluster.last_seen_at.desc()).limit(limit)
+async def _query_clusters(since_time: Optional[datetime]) -> List[Dict[str, Any]]:
+    q = Cluster.select().where(
+        Cluster.first_seen_at >= since_time
+    ).order_by(
+        Cluster.first_seen_at.desc()
+    ).limit(1000)
 
     out: List[Dict[str, Any]] = []
     for cluster in q:
         items_query = (
             NormalizedItem.select()
             .where(
-                (NormalizedItem.cluster_id == cluster.cluster_id)
+                NormalizedItem.cluster_id == cluster.cluster_id
             )
-            .order_by(NormalizedItem.published_at.desc())
+            .order_by(
+                NormalizedItem.published_at.desc()
+            )
         )
 
         def format_datetime(dt):
@@ -241,13 +240,7 @@ class APIServer:
         try:
             since_time = _parse_since_time(request.query.get("since"))
 
-            try:
-                limit = int(request.query.get("limit", 2000))
-            except ValueError:
-                limit = 2000
-            limit = max(1, min(limit, 5000))
-
-            clusters = await _query_clusters(since_time=since_time, limit=limit)
+            clusters = await _query_clusters(since_time=since_time)
             return web.json_response(_clusters_to_geojson(clusters), headers=CORS_HEADERS)
         except Exception as e:
             logger.error("Error in get_clusters: %s", e, exc_info=True)
